@@ -3,12 +3,40 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cross-Border Stablecoin Register — interactive map</title>
+    <title>Cross-Border Stablecoin Register: the interactive map</title>
+    <meta name="description" content="Interactive map of the Cross-Border Stablecoin Register. All 132 directed corridors across twelve jurisdictions, recomputed from primary-law records. Time-travel to a pending regime's commencement date, and export CSV, BibTeX, CITATION.cff, or PDF." />
+    <meta name="author" content="Yunjie Fan" />
+    <meta name="theme-color" content="#EDEFEB" />
+    <!-- Favicon as a data URI on purpose: Vite resolves asset hrefs in index.html at build
+         time, and a data URI sidesteps any public/ vs root path question entirely.
+         The same mark also ships as public/favicon.svg if you want the file. -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2032%2032%22%20role=%22img%22%20aria-label=%22CBSR%22%3E%20%3Crect%20width=%2232%22%20height=%2232%22%20rx=%227%22%20fill=%22%23191B17%22/%3E%20%3Cpath%20d=%22M9%2011.5h11.5M17%208l3.5%203.5L17%2015%22%20fill=%22none%22%20stroke=%22%232E7D46%22%20stroke-width=%222.6%22%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22/%3E%20%3Cpath%20d=%22M23%2020.5H11.5M15%2017l-3.5%203.5L15%2024%22%20fill=%22none%22%20stroke=%22%23B26B12%22%20stroke-width=%222.6%22%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22/%3E%20%3C/svg%3E" />
+
+    <!-- Social preview. This page's URL is fixed and live, so og:url and canonical are set. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Cross-Border Stablecoin Register" />
+    <meta property="og:title" content="One stablecoin, twelve jurisdictions, a different verdict at every border." />
+    <meta property="og:description" content="The interactive map: all 132 directed corridors across twelve jurisdictions, recomputed from primary-law records rather than hard-coded." />
+    <meta property="og:url" content="https://yunjiefanresearch-hub.github.io/cbsr-mapper/" />
+    <meta property="og:image" content="https://yunjiefanresearch-hub.github.io/cbsr-mapper/og-card.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="US to EU clears; EU to US is gated. Same border, opposite verdicts." />
+    <meta property="og:locale" content="en" />
+    <meta property="og:locale:alternate" content="zh_CN" />
+    <link rel="canonical" href="https://yunjiefanresearch-hub.github.io/cbsr-mapper/" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="One stablecoin, twelve jurisdictions, a different verdict at every border." />
+    <meta name="twitter:description" content="The interactive map: all 132 directed corridors across twelve jurisdictions, recomputed from primary-law records." />
+    <meta name="twitter:image" content="https://yunjiefanresearch-hub.github.io/cbsr-mapper/og-card.png" />
+    <meta name="twitter:image:alt" content="US to EU clears; EU to US is gated. Same border, opposite verdicts." />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
 
-    <!-- OPTIONAL — turn on the AI features (document / URL import, auto-map, question
+    <!-- OPTIONAL: turn on the AI features (document / URL import, auto-map, question
          generation) by pointing at your deployed proxy. Uncomment and paste the full
          URL, INCLUDING the secret path segment (see worker/ and README, Tier 2).
          Without this, the deterministic core still works with no model. -->

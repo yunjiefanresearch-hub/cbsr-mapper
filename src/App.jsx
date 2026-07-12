@@ -3,8 +3,8 @@ import React, { useState, useRef, useEffect } from "react";
 // ── Productionization knobs (set these two to go live) ─────────────────────────────
 // Point REGISTER_API at your deployed CBSR api/ directory to sync the live register;
 // leave "" to run purely on the bundled snapshot in DATA below. CONTACT enables the CTA seam.
-const REGISTER_API = ""; // e.g. "https://<user>.github.io/<repo>/api"
-const CONTACT = "";      // e.g. "mailto:you@example.com" or a form URL
+const REGISTER_API = ""; // e.g. "https://<user>.github.io/<repo>/api" — leave "" to use the bundled snapshot
+const CONTACT = "mailto:yunjiefan.research@gmail.com"; // enables the CTA seam at the end of the mapping flow
 const LLM_PROXY = "";    // self-host only: URL of YOUR authenticated proxy for /v1/messages.
                          // Leave "" in the Anthropic artifact sandbox (auth is injected there).
                          // See DEPLOYMENT.md for a ready-to-deploy Cloudflare Worker example.
@@ -1206,6 +1206,9 @@ function buildCitableCsv() {
   }
   return rows.join("\n");
 }
+// BibTeX — the format most readers actually paste into a .bib. It previously carried neither a DOI
+// nor a URL, so a citation generated from it could not be resolved back to the work. Both are now
+// present, anchored to the DOI (stable across repo renames) rather than to a domain.
 function buildBibtex() {
   const m = DATA.meta;
   const year = (m.as_of || "2026").slice(0, 4);
@@ -1215,6 +1218,9 @@ function buildBibtex() {
     "  author       = {Fan, Yunjie},",
     "  version      = {" + m.version + "},",
     "  year         = {" + year + "},",
+    "  publisher    = {Zenodo},",
+    "  doi          = {10.5281/zenodo.20730358},",
+    "  url          = {https://doi.org/10.5281/zenodo.20730358},",
     "  note         = {As-of " + (m.as_of || "") + "; " + m.record_count + " records, " + m.citable_count + " citable. Machine-readable register of cross-border stablecoin regulation across a fifteen-dimension framework.},",
     "  howpublished = {Machine-readable register, schema-validated, queryable over MCP}",
     "}",
@@ -1222,7 +1228,14 @@ function buildBibtex() {
 }
 // CITATION.cff — the Citation File Format the register repo publishes at its root, regenerated
 // from the embedded snapshot so version / date / counts always match what the tool is showing.
-// Fixed metadata (author ORCID, repo URLs, DOI, license, keywords) mirrors the repo's own file.
+//
+// The repo was renamed from `stablecoin-rail-register` to `cross-border-stablecoin-register`. The
+// legacy Pages URL (yunjiefanresearch-hub.github.io/stablecoin-rail-register) now returns 404, and
+// the legacy GitHub URL survives only on GitHub's rename-redirect. Both were baked in here, so every
+// citation file a reader exported carried a dead link. `url` is therefore anchored to the DOI, which
+// is the project's own stated citable anchor ("the citable anchor is the DOI, not a domain") and is
+// stable across any future rename. The schema `$id` keeps the legacy slug on purpose: a JSON Schema
+// $id is an identifier, not a locator, and changing it would break anyone who pinned it.
 function buildCitationCff() {
   const m = DATA.meta;
   return [
@@ -1234,8 +1247,8 @@ function buildCitationCff() {
     "  - family-names: \"Fan\"",
     "    given-names: \"Yunjie\"",
     "    orcid: \"https://orcid.org/0009-0005-6762-084X\"",
-    "repository-code: \"https://github.com/yunjiefanresearch-hub/stablecoin-rail-register\"",
-    "url: \"https://yunjiefanresearch-hub.github.io/stablecoin-rail-register\"",
+    "repository-code: \"https://github.com/yunjiefanresearch-hub/cross-border-stablecoin-register\"",
+    "url: \"https://doi.org/10.5281/zenodo.20730358\"",
     "abstract: \"An open, versioned, machine-readable register of how jurisdictions regulate stablecoins across a fifteen-dimension framework derived from an eight-constraint model, with two doctrinal spines (the permitted-activity / yield boundary and securities classification) and a corridor-level interoperability layer. This citation is for the register snapshot embedded in the dimension-mapper frontend: " + m.record_count + " records, " + m.citable_count + " lawyer-citable, as-of " + (m.as_of || "") + ". Data is licensed CC-BY-4.0.\"",
     "keywords:",
     "  - stablecoin",
@@ -2553,7 +2566,28 @@ function McpRunner({ t, ui }) {
 }
 
 export default function App() {
-  const [ui, setUi] = useState("zh");
+  const [ui, setUi] = useState(() => {
+    try {
+      const p = new URLSearchParams(window.location.search).get("lang");
+      if (p === "zh" || p === "en") return p;
+    } catch (e) {}
+    return "en";
+  });
+  // Origin of the page embedding us, learned from the first language message it sends. Replies are
+  // then addressed to that origin instead of broadcast to "*". Falls back to "*" if we never hear
+  // from a parent (e.g. the mapper opened standalone), so standalone use is unaffected.
+  const parentOrigin = useRef("");
+  useEffect(() => {
+    function onLangMessage(e) {
+      const d = e && e.data;
+      if (d && d.type === "cbsr-lang" && (d.lang === "zh" || d.lang === "en")) {
+        if (e.origin && e.origin !== "null") parentOrigin.current = e.origin;
+        setUi(d.lang);
+      }
+    }
+    window.addEventListener("message", onLangMessage);
+    return () => window.removeEventListener("message", onLangMessage);
+  }, []);
   const [description, setDescription] = useState("");
   const [urlInput, setUrlInput] = useState("");
   const [fileName, setFileName] = useState("");
@@ -2790,7 +2824,7 @@ export default function App() {
         <div className="head-top">
           <div className="head-kicker">CROSS-BORDER STABLECOIN REGISTER · {DATA.meta.version}</div>
           <div className="ui-lang">{[["zh", "中文"], ["en", "EN"]].map(([v, lbl]) =>
-            <button key={v} className={"ui-lang-btn" + (ui === v ? " on" : "")} onClick={() => setUi(v)}>{lbl}</button>)}</div>
+            <button key={v} className={"ui-lang-btn" + (ui === v ? " on" : "")} onClick={() => { setUi(v); try { if (window.parent && window.parent !== window) window.parent.postMessage({ type: "cbsr-lang", lang: v }, parentOrigin.current || "*"); } catch (e) {} }}>{lbl}</button>)}</div>
         </div>
         <h1 className="head-title">{t.title}</h1>
         <p className="head-sub">{t.subA}<b className="not-verdict">{t.notVerdict}</b>{t.subB}</p>
