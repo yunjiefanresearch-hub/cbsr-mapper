@@ -1,11 +1,12 @@
 {
   "name": "cbsr-mapper",
   "private": true,
-  "version": "0.10.1",
+  "version": "0.10.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "check": "node scripts/check-invariants.mjs",
+    "build": "npm run check && vite build && node scripts/check-invariants.mjs --dist",
     "preview": "vite preview"
   },
   "dependencies": {

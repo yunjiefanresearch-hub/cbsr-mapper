@@ -23,6 +23,13 @@ jobs:
         with:
           node-version: 20
       - run: npm install
+
+      # Invariants BEFORE the build: a violated invariant must stop the deploy, not
+      # be discovered in it. `npm run build` also re-runs them against dist/, so a
+      # placeholder cannot reach production even if it only appears after bundling.
+      - name: Check register invariants
+        run: npm run check
+
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
