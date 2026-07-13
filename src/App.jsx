@@ -703,11 +703,19 @@ function DimBlock({ dim, framed, framedHidden, framingActive, audience, t, block
 // where a finding is supposed to sit — an unverified leg must not be readable, by
 // a human or an agent, as if it were a finding.
 //
-// isPlaceholder() is the legacy backstop. Earlier revisions inlined "<VERIFY: …>"
-// markers into the value slot. The invariant below fails the build if one returns;
-// the guard stays so that a stale dataset still degrades honestly rather than
-// printing the raw marker.
-const isPlaceholder = (s) => typeof s === "string" && /<VERIFY/i.test(s);
+// isPlaceholder() is the legacy backstop. Earlier revisions inlined angle-bracket
+// VERIFY markers into the value slot. The invariant below fails the build if one
+// returns; the guard stays so that a stale dataset still degrades honestly rather
+// than printing the raw marker.
+//
+// The [<] character class is deliberate and load-bearing — do NOT "simplify" it back
+// to a bare "<". scripts/check-invariants.mjs --dist greps the built bundle for that
+// exact marker, and Vite bundles regex literals verbatim. Written the obvious way, the
+// detector emits its own detection pattern into dist/ and the build fails on the guard
+// itself: "placeholder in built asset", while the data is in fact clean. [<]VERIFY
+// matches identically at runtime but never appears as that substring in the source, so
+// the real check keeps its teeth. (Same trick as `ps aux | grep '[s]shd'`.)
+const isPlaceholder = (s) => typeof s === "string" && /[<]VERIFY/i.test(s);
 const legValue = (v) => (v == null || v === "" || isPlaceholder(v) ? null : v);
 const legPending = (leg) =>
   !leg ? null
@@ -723,7 +731,7 @@ const corridorPending = (corr) =>
 // scripts/check-invariants.mjs enforces the same rule over the built bundle, so
 // this cannot regress silently. A divergence is surfaced, never shipped quietly.
 (function assertNoPlaceholdersInData() {
-  const hit = JSON.stringify(DATA).match(/<VERIFY[^"]*/i);
+  const hit = JSON.stringify(DATA).match(/[<]VERIFY[^"]*/i); // [<] deliberate — see note above
   if (!hit) return;
   const msg = "CBSR invariant violated — unverified placeholder in shipped data: " + hit[0];
   try { console.error(msg); } catch (e) {}
