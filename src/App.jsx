@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 // ── Productionization knobs (set these two to go live) ─────────────────────────────
 // Point REGISTER_API at your deployed CBSR api/ directory to sync the live register;
 // leave "" to run purely on the bundled snapshot in DATA below. CONTACT enables the CTA seam.
-const REGISTER_API = ""; // e.g. "https://<user>.github.io/<repo>/api" — leave "" to use the bundled snapshot
+const REGISTER_API = ""; // e.g. "https://<user>.github.io/<repo>/api": leave "" to use the bundled snapshot
 const CONTACT = "mailto:yunjiefan.research@gmail.com"; // enables the CTA seam at the end of the mapping flow
 const LLM_PROXY = "";    // self-host only: URL of YOUR authenticated proxy for /v1/messages.
                          // Leave "" in the Anthropic artifact sandbox (auth is injected there).
@@ -24,7 +24,7 @@ const AI_AVAILABLE = (() => {
   try {
     if (typeof window !== "undefined" && window.__CBSR_FORCE_AI__ === false) return false;
   } catch (e) { /* sandboxed access can throw; ignore and assume available */ }
-  return true; // fail open — a real failure degrades gracefully at runtime
+  return true; // fail open: a real failure degrades gracefully at runtime
 })();
 
 // Active AI proxy endpoint. Resolution order: the LLM_PROXY compile-time constant, else an injected
@@ -186,11 +186,11 @@ const T = {
     title: "监管维度映射器",
     subA: "把项目自述的业务形态,映射到相关监管维度、对应条款(带出处)、以及该问的问题。",
     notVerdict: " 这是一张地图,不是判决",
-    subB: " —— 不判定你是否违规,只告诉你该看哪几条、该问哪几个问题。多选法域时按维度并排看跨法域差异。",
+    subB: "：不判定你是否违规,只告诉你该看哪几条、该问哪几个问题。多选法域时按维度并排看跨法域差异。",
     f1: "1 · 项目自述(手打,或从白皮书 / 官网导入)",
      taPh: "例:我们发一个锚定美元的支付稳定币,不付息;用户余额会被路由进一个货币基金赚收益;也面向境外用户。",
     tryL: "试试:",
-    impA: "或从来源导入 —— 导入只填入上方描述框,", impBold: "映射前请在框里核对/修改", impC: "(描述框就是确认环节):",
+    impA: "或从来源导入：导入只填入上方描述框,", impBold: "映射前请在框里核对/修改", impC: "(描述框就是确认环节):",
     fileBtn: "上传白皮书 (PDF / txt)",
     urlPh: "官网 URL 或项目名,例 https://example.com",
     read: "读取",
@@ -226,7 +226,7 @@ const T = {
     restateL: "理解的业务形态", restateHint: "不准确?在上方描述框改完重新映射。",
     ppL: "监管压力点", ppHint: "(点击跳到对应内容)",
     resMeta: (c, g, d, aud) => `${c} 条已核验记录${g > 0 ? " · " + g + " 个覆盖空白" : ""} · ${d} 个维度 · 视角:${aud === "regulator" ? "监管方" : "项目方"}`,
-    tierP: "核心压力点 —— 这套业务最突出触发的维度", tierB: "基线维度 —— 任何此类业务都会例行触发",
+    tierP: "核心压力点：这套业务最突出触发的维度", tierB: "基线维度：任何此类业务都会例行触发",
     baselineCount: (n, busy) => `${n} 个${busy ? " · 问题生成中" : ""} · 点击展开`, collapseHint: "点击收起",
     pTag: "压力点", back: "↑ 返回压力点目录", why: "为何相关",
     qReg: "审查者会问 / 该核查的点", qProj: "带去问持牌律师的问题",
@@ -240,17 +240,17 @@ const T = {
     axProv: "出处", pvText: "官方文本已核", pvMixed: "部分核验", pvFirm: "实务摘要", pvUnset: "未定级",
     axBind: "生效", bnForce: "已生效", bnMade: "已通过·未生效", bnPolicy: "政策已定·待立法", bnProp: "提案·待决", bnProhib: "禁止", bnNone: "无制度",
     citable: "✓ 可作现行法引用", citableWord: "可引用", officialSrc: "官方出处",
-    axesLegend: "每条记录标注三轴 —— 命题种类 · 出处强度 · 生效状态；三者对齐（法律命题 · 官方文本已核 · 已生效）者可作现行法引用。",
+    axesLegend: "每条记录标注三轴：命题种类 · 出处强度 · 生效状态；三者对齐（法律命题 · 官方文本已核 · 已生效）者可作现行法引用。",
     seamH: "地图到此为止。", seamB: "需要针对你具体架构、某几个法域 / 通道的已核验通道分析（可引用记录 + corridor 可行性 + 待核查清单）？", seamBtn: "获取针对性的已核验分析 →",
     syncOk: "已同步 live 注册表", syncSnap: "内置快照", syncWait: "同步中…", refreshed: "条已刷新",
-    asOf: "快照截至", scopeNote: "覆盖范围：本工具映射的是节点层（法域 × 维度）——业务形态→相关维度、对应条款与该问的问题。走廊可行性、时间维（生效前后）与跨法域分析在完整 register 中，不在此处。",
+    asOf: "快照截至", scopeNote: "覆盖范围：本工具映射的是节点层（法域 × 维度）：业务形态→相关维度、对应条款与该问的问题。走廊可行性、时间维（生效前后）与跨法域分析在完整 register 中，不在此处。",
     discAsOf: "本快照为冻结版本，核验截至日见页首；监管随时变动（同一日内即可翻转），引用前请对照一手来源核实时效。",
-    scopeNoCov: "所选法域在推导出的维度上暂无已核验记录——这是 register 的覆盖空白，不是描述太模糊。可换用其他法域，或到完整 register 查询。",
+    scopeNoCov: "所选法域在推导出的维度上暂无已核验记录：这是 register 的覆盖空白，不是描述太模糊。可换用其他法域，或到完整 register 查询。",
     manualH: "离线 / 无 AI 兜底：手动勾选业务特征",
     manualB: "路由步骤需要模型；若不可用，可自行勾选下列业务特征，工具仍会用确定性规则给出维度地图、对应记录与可引用子集（此路径不调用模型）。问题生成仍需模型。",
     manualBtn: "用这些特征生成地图",
     aiOffH: "AI 辅助功能未启用",
-    aiOffB: "文档 / 网址导入和「自动映射」需要一个已认证的模型代理。在 Anthropic 沙盒里代理是自动注入的；自托管时请按 DEPLOYMENT.md 配置你自己的代理并填入 LLM_PROXY。在此期间，下方的手动特征兜底可用，其余全部功能——维度地图、走廊、12×12 矩阵、时间轴、导出——均为确定性，无需模型即可正常使用。",
+    aiOffB: "文档 / 网址导入和「自动映射」需要一个已认证的模型代理。在 Anthropic 沙盒里代理是自动注入的；自托管时请按 DEPLOYMENT.md 配置你自己的代理并填入 LLM_PROXY。在此期间，下方的手动特征兜底可用，其余全部功能：维度地图、走廊、12×12 矩阵、时间轴、导出：均为确定性，无需模型即可正常使用。",
     aiOffManual: "跳到手动映射",
     aiOffTag: "确定性核心不受影响",
     proxyLabel: "或者：填入你的模型代理地址以恢复 AI 功能",
@@ -269,11 +269,11 @@ const T = {
     qHidden: (n) => `${n} 条问题因出处校验被隐藏`,
     qAllHidden: (n) => `该记录的 ${n} 条生成问题均未通过出处校验，已全部隐藏（出处文本中无对应数字/表述依据）。`,
     corrDemo: "示例 DEMO",
-    corrDemoNote: "本走廊含未核验段（HK 段整段待核），按示例展示——非交付级结论，请勿据此引用。",
-    corrTitle: "跨境通道分析", corrHint: "这是 register 区别于逐法域查表的核心层 —— 沿一条跨境资金流,逐段标出什么能清算、什么会断。",
+    corrDemoNote: "本走廊含未核验段（HK 段整段待核），按示例展示：非交付级结论，请勿据此引用。",
+    corrTitle: "跨境通道分析", corrHint: "这是 register 区别于逐法域查表的核心层：沿一条跨境资金流,逐段标出什么能清算、什么会断。",
     corrFlow: "资金流", corrLeg: "法域段", corrGate: "监管关口", corrClears: "可清算路径", corrBreaks: "断点 / 受阻",
     corrKey: "核心约束", corrUsLink: "美国法理对应", corrSrc: "出处", corrPending: "待核验",
-    corrPendingNote: "此段尚未完成一手核验。字段留空,而非填占位文字 —— 工具不凭空补全。",
+    corrPendingNote: "此段尚未完成一手核验。字段留空,而非填占位文字：工具不凭空补全。",
     corrNeeds: "补齐条件",
     corrConf: (c) => `通道 confidence:${c}`,
     empty: "在描述框写一段业务自述(或上传白皮书 / 填官网 URL 导入),选一个或多个法域、选受众,点「映射」。工具会先复述它理解的业务形态、标出监管压力点,再按维度并排列出每个法域的现行要求与该问的问题。",
@@ -288,16 +288,16 @@ const T = {
     title: "Regulatory Dimension Mapper",
     subA: "Maps a project's self-described business form to the relevant regulatory dimensions, the governing provisions (with sources), and the questions to ask.",
     notVerdict: " This is a map, not a verdict",
-    subB: " — it does not decide whether you comply; it tells you which provisions to read and which questions to ask. Select several jurisdictions to see the cross-jurisdictional differential side by side.",
+    subB: ": it does not decide whether you comply; it tells you which provisions to read and which questions to ask. Select several jurisdictions to see the cross-jurisdictional differential side by side.",
     f1: "1 · Business description (type it, or import from a whitepaper / website)",
      taPh: "e.g. We issue a USD-pegged payment stablecoin, no interest to holders; user balances can be routed into a money-market fund for yield; we also serve non-US users.",
     tryL: "Try:",
-    impA: "Or import from a source — import only fills the box above; ", impBold: "review / edit it before mapping", impC: " (the box is the confirmation step):",
+    impA: "Or import from a source: import only fills the box above; ", impBold: "review / edit it before mapping", impC: " (the box is the confirmation step):",
     fileBtn: "Upload whitepaper (PDF / txt)",
     urlPh: "Website URL or project name, e.g. https://example.com",
     read: "Fetch",
     dExtracting: "Extracting the business form from the file…",
-    dExtracted: "Extracted and filled into the box below — review / edit before you map.",
+    dExtracted: "Extracted and filled into the box below: review / edit before you map.",
     dExtractFail: (e) => `Extraction failed (${e}). The file may be too large; try pasting the key sections instead.`,
     dReadFail: "Could not read the file.",
     dUrlReading: "Searching the web and reading this site…",
@@ -315,44 +315,44 @@ const T = {
     s1: "Step 1: understand the business + route dimensions…", s2: "Step 2: retrieve verified records…",
     procRoute: "Understand the business + extract features", procRetrieve: (n) => `Retrieve ${n} verified records`, procRetrieveStep: "Derive dimensions by rule + retrieve records", procFrame: "Generate the questions to ask",
     framingProg: (d, tot) => `Generating questions… ${d} / ${tot} batches done (provisions & sources are ready below)`,
-    errLimit: "AI calls are rate-limited (429): too many runs this session. Wait a minute or two, then click Map again. This is a limit on in-page AI calls that I can't lift — I can only reduce calls and back off.",
+    errLimit: "AI calls are rate-limited (429): too many runs this session. Wait a minute or two, then click Map again. This is a limit on in-page AI calls that I can't lift: I can only reduce calls and back off.",
     errOverload: "The AI service is temporarily overloaded (529). Wait a moment and click Map again.",
     errNetwork: "Network error. Check your connection and retry.",
     errEmpty: "The AI returned an empty reply. Click Map again.",
     errParse: "Got a reply but couldn't parse it (this version adds inner-quote repair + truncation repair). If it still fails, paste me the text below:",
     errOther: (e) => `Mapping call failed: ${e}. Click Map again.`,
     rawLabel: "What the model actually returned (first 200 chars):",
-    scopeOut: "This description doesn't appear to involve digital tokens, crypto, or payments — it falls outside the register's scope. Try a description closer to a stablecoin / digital-asset business.",
+    scopeOut: "This description doesn't appear to involve digital tokens, crypto, or payments: it falls outside the register's scope. Try a description closer to a stablecoin / digital-asset business.",
     scopeVague: "The description is still too vague to map to specific dimensions. Add detail: who issues, what it pegs to, any yield / return arrangement, whether it's cross-border, where data sits.",
     partA: "This business is broader than a stablecoin (it reads like a crypto / digital-capital thesis); only ", partBold: "part", partC: " of it falls within the register. What's mapped below is the part that touches register dimensions; the rest is out of this tool's scope.",
     restateL: "Business form, as understood", restateHint: "Not accurate? Edit the box above and re-map.",
     ppL: "Regulatory pressure points", ppHint: "(click to jump to the section)",
     resMeta: (c, g, d, aud) => `${c} verified record${c === 1 ? "" : "s"}${g > 0 ? " · " + g + " coverage gap" + (g === 1 ? "" : "s") : ""} · ${d} dimensions · view: ${aud === "regulator" ? "regulator" : "project team"}`,
-    tierP: "Core pressure points — the dimensions this business most distinctively triggers", tierB: "Baseline dimensions — routinely triggered by any business of this type",
+    tierP: "Core pressure points: the dimensions this business most distinctively triggers", tierB: "Baseline dimensions: routinely triggered by any business of this type",
     baselineCount: (n, busy) => `${n}${busy ? " · questions generating" : ""} · click to expand`, collapseHint: "click to collapse",
     pTag: "pressure", back: "↑ back to pressure-point list", why: "why relevant",
     qReg: "What a reviewer asks / points to scrutinise", qProj: "Questions to confirm with a licensed lawyer",
     qGen: "model-generated from this entry · not a conclusion", qGap: "no verified record · points to the dimension only",
-    qGenerating: "generating…", qPendGen: "Questions couldn't be generated — retry. The entry and source above are still valid.",
+    qGenerating: "generating…", qPendGen: "Questions couldn't be generated: retry. The entry and source above are still valid.",
     noRec: "coverage gap / no verified record",
-    gapBody: (j) => `The register has no verified record for ${j} on this dimension yet. It is relevant to your business and you still need to check it — the tool will not invent a rule.`,
+    gapBody: (j) => `The register has no verified record for ${j} on this dimension yet. It is relevant to your business and you still need to check it: the tool will not invent a rule.`,
     gapQ: (j, dim) => [`What are ${j}'s current requirements on ${dim} for this business?`, `Which authority in ${j} has jurisdiction here, and under what instrument?`, `Are there rules or carve-outs on this dimension specific to this business?`],
     tension: "open tension", channel: "resolution channel: ",
     axClaim: "claim", axLegal: "proposition of law", axOp: "market / operational fact",
     axProv: "provenance", pvText: "confirmed vs official text", pvMixed: "partly confirmed", pvFirm: "practitioner summary", pvUnset: "untiered",
     axBind: "binding", bnForce: "in force", bnMade: "passed · not commenced", bnPolicy: "policy final · pending legislation", bnProp: "proposal · pending", bnProhib: "prohibition", bnNone: "no regime",
     citable: "✓ citable as current law", citableWord: "citable", officialSrc: "official source",
-    axesLegend: "Each record is tagged on three axes — kind of claim · provenance strength · binding status; records aligned on all three (proposition of law · confirmed vs official text · in force) are citable as current binding law.",
+    axesLegend: "Each record is tagged on three axes: kind of claim · provenance strength · binding status; records aligned on all three (proposition of law · confirmed vs official text · in force) are citable as current binding law.",
     seamH: "The map stops here.", seamB: "Need a verified corridor analysis for your specific structure across a few jurisdictions / corridors (citable records + corridor feasibility + a checklist to verify)?", seamBtn: "Get a targeted verified analysis →",
     syncOk: "synced live register", syncSnap: "bundled snapshot", syncWait: "syncing…", refreshed: "refreshed",
-    asOf: "snapshot as-of", scopeNote: "Scope: this maps the node layer (jurisdiction × dimension) — business form → relevant dimensions, governing provisions, and the questions to ask. Corridor feasibility, the time dimension (before/after an instrument takes effect), and cross-jurisdictional analysis live in the full register, not here.",
-    discAsOf: "This is a frozen snapshot; its verification as-of date is shown at the top. Regulation moves (a status can flip within a single day) — check currency against the primary source before citing.",
-    scopeNoCov: "The selected jurisdiction(s) have no verified record on the derived dimensions — a coverage gap in the register, not a vague description. Try other jurisdictions, or query the full register.",
+    asOf: "snapshot as-of", scopeNote: "Scope: this maps the node layer (jurisdiction × dimension): business form → relevant dimensions, governing provisions, and the questions to ask. Corridor feasibility, the time dimension (before/after an instrument takes effect), and cross-jurisdictional analysis live in the full register, not here.",
+    discAsOf: "This is a frozen snapshot; its verification as-of date is shown at the top. Regulation moves (a status can flip within a single day): check currency against the primary source before citing.",
+    scopeNoCov: "The selected jurisdiction(s) have no verified record on the derived dimensions: a coverage gap in the register, not a vague description. Try other jurisdictions, or query the full register.",
     manualH: "Offline / no-AI fallback: set business features manually",
     manualB: "The routing step needs the model; if it is unavailable, tick the business features below and the tool still produces the dimension map, the matching records, and the citable subset by deterministic rule (this path calls no model). Question generation still needs the model.",
     manualBtn: "Map from these features",
     aiOffH: "AI-assisted features are off",
-    aiOffB: "Document / URL import and auto-map need an authenticated model proxy. In the Anthropic sandbox that proxy is injected automatically; to self-host, configure your own proxy per DEPLOYMENT.md and set LLM_PROXY. In the meantime the manual-feature fallback below works, and everything else — the dimension map, corridors, the 12×12 matrix, time-travel, and exports — is deterministic and runs with no model.",
+    aiOffB: "Document / URL import and auto-map need an authenticated model proxy. In the Anthropic sandbox that proxy is injected automatically; to self-host, configure your own proxy per DEPLOYMENT.md and set LLM_PROXY. In the meantime the manual-feature fallback below works, and everything else: the dimension map, corridors, the 12×12 matrix, time-travel, and exports: is deterministic and runs with no model.",
     aiOffManual: "Jump to manual mapping",
     aiOffTag: "Deterministic core unaffected",
     proxyLabel: "Or: paste your model-proxy URL to restore AI features",
@@ -371,11 +371,11 @@ const T = {
     qHidden: (n) => `${n} question${n > 1 ? "s" : ""} hidden by source-check`,
     qAllHidden: (n) => `All ${n} generated question${n > 1 ? "s" : ""} for this record failed the source-check and were hidden (no basis in the source text).`,
     corrDemo: "DEMO",
-    corrDemoNote: "This corridor contains unverified legs (the HK leg is entirely pending) and is shown as an illustrative demo — not a delivered conclusion; do not cite from it.",
-    corrTitle: "Cross-border corridor analysis", corrHint: "The layer that sets this register apart from per-jurisdiction lookup — along one cross-border flow, what clears and what breaks at each leg.",
+    corrDemoNote: "This corridor contains unverified legs (the HK leg is entirely pending) and is shown as an illustrative demo: not a delivered conclusion; do not cite from it.",
+    corrTitle: "Cross-border corridor analysis", corrHint: "The layer that sets this register apart from per-jurisdiction lookup: along one cross-border flow, what clears and what breaks at each leg.",
     corrFlow: "Flow", corrLeg: "Leg", corrGate: "Regulatory gate", corrClears: "Clears", corrBreaks: "Breaks / blocked",
     corrKey: "Binding constraint", corrUsLink: "US doctrinal link", corrSrc: "Sources", corrPending: "pending verification",
-    corrPendingNote: "This leg is not yet primary-source verified. The field is left empty rather than filled with placeholder text — the tool asserts nothing it has not verified.",
+    corrPendingNote: "This leg is not yet primary-source verified. The field is left empty rather than filled with placeholder text: the tool asserts nothing it has not verified.",
     corrNeeds: "To verify",
     corrConf: (c) => `corridor confidence: ${c}`,
     empty: "Write a business description (or import from a whitepaper / website URL), pick one or more jurisdictions and an audience, then click Map. The tool first restates the business form it understood and flags the pressure points, then lists each jurisdiction's current requirements and the questions to ask, dimension by dimension.",
@@ -412,7 +412,7 @@ async function callClaude(content, opts = {}) {
   if (!res.ok) {
     let body = "";
     try { body = (await res.text()).slice(0, 200); } catch (e) { /* ignore */ }
-    throw new Error("HTTP " + res.status + (body ? " — " + body : ""));
+    throw new Error("HTTP " + res.status + (body ? ": " + body : ""));
   }
   const data = await res.json();
   if (!data || !Array.isArray(data.content)) throw new Error("SHAPE: unexpected response");
@@ -506,7 +506,7 @@ const JSON_HYGIENE =
   "CRITICAL JSON RULE: return exactly one valid JSON object. Inside every string value, NEVER use the double-quote character (\"). If you must quote a term (a token name, a label), wrap it in 「」 or use no quotes at all. Do not wrap the JSON in code fences. Do not write anything before or after the JSON object.";
 
 const extractPrompt = (lang) =>
-  "Below (as an attached document or as text) is a project's own whitepaper / material. Describe, in <=160 words, the business form it sets out: what is issued or built, the economic model, who it serves, any yield or returns, and any cross-border or data aspects. Describe ONLY what the source states — do not evaluate, judge, rate, or add facts not present. Write in " + langInstruction(lang) + ". Output only the description, no preamble.";
+  "Below (as an attached document or as text) is a project's own whitepaper / material. Describe, in <=160 words, the business form it sets out: what is issued or built, the economic model, who it serves, any yield or returns, and any cross-border or data aspects. Describe ONLY what the source states: do not evaluate, judge, rate, or add facts not present. Write in " + langInstruction(lang) + ". Output only the description, no preamble.";
 const urlPrompt = (url, lang) =>
   "Use web search to find what the project at this website or name does: " + url +
   "\nThen describe, in <=160 words, its business form: what is issued or built, the economic model, audience, any yield or returns, and any cross-border or data aspects. Describe ONLY what you find. If information is insufficient, say so plainly. Do not evaluate, judge, or rate. Write in " + langInstruction(lang) + ". Output only the description.";
@@ -517,7 +517,7 @@ const urlPrompt = (url, lang) =>
 function routerPrompt(description, lang, strict) {
   return [
     "You are the routing step of a cross-border stablecoin regulatory-research tool. You DO NOT judge compliance and DO NOT name any statute, rule, or jurisdiction.",
-    "Read the business description and output (a) a plain restatement, (b) scope, (c) a small set of yes/no feature flags. You do NOT choose regulatory dimensions — downstream code derives those deterministically from your flags.",
+    "Read the business description and output (a) a plain restatement, (b) scope, (c) a small set of yes/no feature flags. You do NOT choose regulatory dimensions: downstream code derives those deterministically from your flags.",
     "", JSON_HYGIENE, "",
     "Business description:", '"""' + description + '"""', "",
     "Return ONLY JSON in this exact shape:",
@@ -534,8 +534,8 @@ function routerPrompt(description, lang, strict) {
     '    "custody": true/false',
     "  }",
     "}", "",
-    "Feature definitions — answer about the DESCRIBED business, regardless of the exact words or novel terms it uses:",
-    "- yield: holders receive, or the product generates for holders, any interest / yield / return — directly OR by routing balances into a yield-bearing product.",
+    "Feature definitions: answer about the DESCRIBED business, regardless of the exact words or novel terms it uses:",
+    "- yield: holders receive, or the product generates for holders, any interest / yield / return: directly OR by routing balances into a yield-bearing product.",
     "- securities_wrapper: the instrument is, or can be wrapped as, a fund share / security / investment product / preferred security, OR it carries a return that raises an investment-product question.",
     "- lending_or_routing: the business does lending / credit / deposit-taking, OR routes user balances into other products or layers.",
     "- non_domestic_peg: it pegs to a currency that is foreign to at least one market it serves (e.g. a USD peg served outside the US).",
@@ -556,7 +556,7 @@ function framerPrompt(audience, entries, lang, strict) {
   return [
     "You are the framing step of a cross-border stablecoin regulatory-research tool. You turn register entries into the QUESTIONS the audience should ask.",
     "You MUST NOT state conclusions or scores, MUST NOT say whether the business complies, and MUST NOT invent any statute, rule, figure, or requirement.",
-    "You MUST NOT mention any internal provenance — never name a Compliance Matrix, a maintainer, a document version, an author, transcription status, or a confidence level. Speak only about the law/requirement itself.",
+    "You MUST NOT mention any internal provenance: never name a Compliance Matrix, a maintainer, a document version, an author, transcription status, or a confidence level. Speak only about the law/requirement itself.",
     "", JSON_HYGIENE, "",
     "Audience: " + aud, "",
     "Each entry has a verified requirement (and sometimes a tension / resolution_channel = an open issue). Ground questions in these.",
@@ -731,9 +731,9 @@ const corridorPending = (corr) =>
 // scripts/check-invariants.mjs enforces the same rule over the built bundle, so
 // this cannot regress silently. A divergence is surfaced, never shipped quietly.
 (function assertNoPlaceholdersInData() {
-  const hit = JSON.stringify(DATA).match(/[<]VERIFY[^"]*/i); // [<] deliberate — see note above
+  const hit = JSON.stringify(DATA).match(/[<]VERIFY[^"]*/i); // [<] deliberate: see note above
   if (!hit) return;
-  const msg = "CBSR invariant violated — unverified placeholder in shipped data: " + hit[0];
+  const msg = "CBSR invariant violated: unverified placeholder in shipped data: " + hit[0];
   try { console.error(msg); } catch (e) {}
   try { if (import.meta && import.meta.env && import.meta.env.DEV) throw new Error(msg); } catch (e) { if (e instanceof Error && e.message === msg) throw e; }
 })();
@@ -798,7 +798,7 @@ const TX = {
     navMapSub: "节点层", navCorrSub: "有向可行性 + 时间", navSubSub: "八约束 · 六交互 · C1–C8", navFwdSub: "触发register + 敏感度",
     navStructSub: "对账 · 结算 · 收敛", navAgentsSub: "MCP · 可引用给机器",
     // corridor "why" (grounded explanation of the computed class)
-    whyH: "为何是这个类别 —— 落到约束基底",
+    whyH: "为何是这个类别：落到约束基底",
     whyRule: {
       clean: "干净通道 · 两端各自可授权,顺流方向无等效步骤",
       dest_blocked: "目的地关口 · 存在发行禁止",
@@ -808,52 +808,52 @@ const TX = {
       origin_drag: "起点拖拽 · origin 无可出口的可授权代币",
       compose: "组合问题 · 两制度无法直接组合",
     },
-    whyClean: "两端均为已生效、可授权的发行制度;此向无绑定约束需引用 —— 干净通道。",
-    whyNote: "此解释由 register 的 compose() 类别 + C1–C8 基底逐边推导:类别读自计算层,绑定约束读自节点记录 —— 不新增事实。点约束 ID 到「约束基底」看全网。",
+    whyClean: "两端均为已生效、可授权的发行制度;此向无绑定约束需引用：干净通道。",
+    whyNote: "此解释由 register 的 compose() 类别 + C1–C8 基底逐边推导:类别读自计算层,绑定约束读自节点记录：不新增事实。点约束 ID 到「约束基底」看全网。",
     // substrate view
-    subH: "约束基底 —— 八约束的可控词表,与它们生成的组合问题",
-    subLead: "地图把业务映到维度,走廊把两端组合成可行性。这一层是二者之下的引擎:Architecture 论文归纳出的八个监管约束(C1–C8),每个法域在每个约束上取一个「极」,极由承载 constraint_ref 的记录构成、并标注是否可引用。六个交互集(A–F)是这些约束联合绑定时生成的组合问题 —— 正是它们推导出走廊里的每一个类别。全部为 register 的投影,不新增事实。",
+    subH: "约束基底：八约束的可控词表,与它们生成的组合问题",
+    subLead: "地图把业务映到维度,走廊把两端组合成可行性。这一层是二者之下的引擎:Architecture 论文归纳出的八个监管约束(C1–C8),每个法域在每个约束上取一个「极」,极由承载 constraint_ref 的记录构成、并标注是否可引用。六个交互集(A–F)是这些约束联合绑定时生成的组合问题：正是它们推导出走廊里的每一个类别。全部为 register 的投影,不新增事实。",
     subTallyCit: "可引用(tier1 · 现行 · 已核)", subTallyPend: "待核积压(tier1 · 现行 · 未核)", subTallyT1: "法律命题(tier1_legal)", subTallyTot: "记录总数",
     subConH: "八约束(C1–C8)", subConX: "跨境组合问题:", subConDims: "对应维度:",
-    subGridH: "法域 × 约束 —— 极网格", subGridHint: "每格是该法域在该约束上的极。点任一格看其支撑记录。颜色是证据轴:该约束单元是否已达到「可作现行法引用」,还是仍在核验积压里。这就是把核验积压做成可交互面 —— 不是空占位。",
+    subGridH: "法域 × 约束：极网格", subGridHint: "每格是该法域在该约束上的极。点任一格看其支撑记录。颜色是证据轴:该约束单元是否已达到「可作现行法引用」,还是仍在核验积压里。这就是把核验积压做成可交互面：不是空占位。",
     subStatCit: "可引用极", subStatPend: "现行 · 待核", subStatOther: "记录在册(草案/运营/混合)", subStatNone: "无记录",
     subPoleNone: "此约束单元暂无承载 constraint_ref 的记录。", subTension: "张力:",
     subIntH: "六交互集(A–F)", subIntLead: "八约束并非独立运作。以下六对约束的联合绑定生成本文分析的组合问题;点约束 ID 高亮到网格与词表。",
     // MCP runner
-    mcpRunH: "现场调用 —— 对内嵌 register 跑一个工具",
-    mcpRunLead: "工具面不只是目录。选一个工具,它就对上方内嵌的 register 实跑,返回真实形状 —— 无网络、不生成事实,输出即部署服务器该工具会给出的投影。",
+    mcpRunH: "现场调用：对内嵌 register 跑一个工具",
+    mcpRunLead: "工具面不只是目录。选一个工具,它就对上方内嵌的 register 实跑,返回真实形状：无网络、不生成事实,输出即部署服务器该工具会给出的投影。",
     mcpArgJur: "法域", mcpArgO: "起点", mcpArgD: "目的地",
-    mcpRunNote: "asserts_new_facts: false —— 每个工具只筛选和重排已发布记录。这演示了论文的核心主张:「可作现行法引用」是 build 能判定的记录属性,机器一次拿到干净子集。",
+    mcpRunNote: "asserts_new_facts: false：每个工具只筛选和重排已发布记录。这演示了论文的核心主张:「可作现行法引用」是 build 能判定的记录属性,机器一次拿到干净子集。",
     // snapshot / liveness banner
     snapFrozen: "冻结快照", snapLive: "已同步 live",
     snapAgeNew: (d) => `截至 ${d}`,
     snapAge: (as_of, d) => `快照截至 ${as_of} · 已 ${d} 天`,
-    snapDisc: "这是一个带日期、可版本化的登记册的一次快照 —— 不是活体订阅。监管可在同一日内翻转（本 register 的台湾条目即在快照当日三读通过）。引用前请对照一手来源核实时效。",
+    snapDisc: "这是一个带日期、可版本化的登记册的一次快照：不是活体订阅。监管可在同一日内翻转（本 register 的台湾条目即在快照当日三读通过）。引用前请对照一手来源核实时效。",
     snapDiscLive: "已从部署的 register API 同步三条证据轴与可引用标记。以下仍为该次同步时点的状态。",
     // shared class vocabulary
     clsLegendT: "可行性类别（Corridor Atlas 六类）",
-    clsLegendHint: "有向读取：读目的地入境关口，origin 施加出口/egress 限制时叠加一个 origin 拖拽。入境系统性地严于出境 —— 同一对法域两个方向可落不同类别。",
+    clsLegendHint: "有向读取：读目的地入境关口，origin 施加出口/egress 限制时叠加一个 origin 拖拽。入境系统性地严于出境：同一对法域两个方向可落不同类别。",
     ovLabel: "origin 出口限制",
     // corridors view
-    corrH: "走廊层 —— 一条资金流沿途,什么能清算、什么会断,以及哪天会变",
+    corrH: "走廊层：一条资金流沿途,什么能清算、什么会断,以及哪天会变",
     corrLead: "节点层告诉你每个法域各自要什么;走廊层把两端组合起来,给出这条有向通道今天的可行性类别、它在未来某个生效日的变化,以及若某部待决法律通过它会怎样。下方类别由 register 的 compose() 引擎从各法域信号表逐边推导（标注预览,非权威结论）。",
     corrPickO: "起点法域（origin）", corrPickD: "目的地法域（destination）",
     corrSame: "选两个不同法域看有向通道。",
     corrToday: "今日类别", corrReverse: "反向", corrAsym: "方向不对称",
     corrUndir: "无向合成", corrOverride: "此向叠加 origin 出口限制拖拽。",
     corrTransH: "已排定的变化（按生效日）", corrTransNone: "在已排定的生效日之前,本向类别无变化。",
-    corrFlip: (dt, f, to) => `${dt} —— 由 ${f} 翻转为 ${to}`,
+    corrFlip: (dt, f, to) => `${dt}：由 ${f} 翻转为 ${to}`,
     corrWhatifH: "若某部待决法律通过（if-enacted,非预测）",
     corrWhatifNone: "无待决法律会改变本通道的类别。",
     corrBloc: "结算基底", corrBlocSame: (b) => `两端同属 ${b} bloc 内部轨道`,
-    corrBlocCross: "跨 bloc —— 两端分属对立的结算实验,互不互通",
+    corrBlocCross: "跨 bloc：两端分属对立的结算实验,互不互通",
     corrBlocBridge: "经香港 Project Ensemble 的桥接位",
     corrBlocOff: "两端均不在共享结算实验之内",
     corrWorkedH: "手工精修的走廊（深度样本）",
-    corrWorkedHint: "上面的类别是全 66 对的计算骨架;下面是一条手工核验到条款级的走廊。诚实标注:BR 段已核,HK 段仍在核验 backlog —— 这正是方法论的 honest-residual 纪律,不凭空补全。",
+    corrWorkedHint: "上面的类别是全 66 对的计算骨架;下面是一条手工核验到条款级的走廊。诚实标注:BR 段已核,HK 段仍在核验 backlog：这正是方法论的 honest-residual 纪律,不凭空补全。",
     corrExample: "示例通道", corrExDated: "带日期的翻转", corrExPre: "前制度起点", corrExBlocked: "禁止目的地",
     // forward view
-    fwdH: "时间引擎 —— 待决的法律变化,以及它们落在有向图的哪里",
+    fwdH: "时间引擎：待决的法律变化,以及它们落在有向图的哪里",
     fwdLead: "静态地图是一张照片。前瞻层把公共记录上已可见、但尚未生效的法律变化逐一列出:每一条说明它会改变哪些有向边的可行性类别、依据哪些记录、以及它本身处于何种 conditional 状态。这是 conditioning(条件化),不是 forecasting(预测):每部法律一条 if-then,不赋概率、不编日期。",
     fwdSensH: "走廊敏感度排序", fwdSensHint: "一条待决触发在解决时会重分类多少条有向边。这是关于图结构的陈述(触发是单向还是双向、该法域的入度/出度),不是关于哪部法案会通过。",
     fwdRank: "排名", fwdEdges: "重分类边数", fwdFanIn: "入向", fwdFanOut: "出向", fwdBoth: "双向触发",
@@ -867,14 +867,14 @@ const TX = {
     fwdOwnEv: "本法域待决事件", fwdInb: "入向重分类", fwdOutb: "出向重分类", fwdExp: "对手方敞口(按敞口排序)",
     fwdNoEv: "本法域无待决事件。", fwdNoInb: "无入向边因待决触发而重分类。", fwdNoOutb: "无出向边因待决触发而重分类。",
     fwdMoves: "移动类别", fwdAccess: "仅改变可及性（intra-regime gating）",
-    fwdAccessNote: "关键区分:这类变化改变「谁可以运营、哪些代币可入市」,但不移动任何可行性类别。一个类别中心的敏感度读数会把它记为「无」—— 低敏感度须读作「无待决类别翻转」,不是「无事发生」。欧盟 2026-07-01 MiCA 过渡到期即此类。",
+    fwdAccessNote: "关键区分:这类变化改变「谁可以运营、哪些代币可入市」,但不移动任何可行性类别。一个类别中心的敏感度读数会把它记为「无」：低敏感度须读作「无待决类别翻转」,不是「无事发生」。欧盟 2026-07-01 MiCA 过渡到期即此类。",
     fwdVia: "触发", fwdTiming: "时点",
     // structure view
-    structH: "宏观结构 —— 方法论的证明,以及静态地图表达不了的一个断层",
+    structH: "宏观结构：方法论的证明,以及静态地图表达不了的一个断层",
     structReconH: "computed-vs-authored 对账",
-    structReconLead: "方法论论文最原创的一环:同一个下游结论(通道可行性)推导两次 —— 一次手工,一次由小型可审计规则引擎在带出处的信号表上跑 —— 然后把两者的每一处分歧作为 finding 呈现,而非在任一侧悄悄抹平。计算层作为「标注预览」交付,不是权威结论。下方即该对账的实况:",
+    structReconLead: "方法论论文最原创的一环:同一个下游结论(通道可行性)推导两次：一次手工,一次由小型可审计规则引擎在带出处的信号表上跑：然后把两者的每一处分歧作为 finding 呈现,而非在任一侧悄悄抹平。计算层作为「标注预览」交付,不是权威结论。下方即该对账的实况:",
     structAgree: "对账一致", structPairs: "对法域", structFindings: "分歧(作为 finding 保留)",
-    structReconNote: "两处分歧同源:英国制度已通过但尚未生效,一层视之为「尚不可桥接」,另一层视之为「可干净桥接」。这正是引擎该暴露的、有研究价值的信号 —— 若强行覆盖一侧,信号就被销毁了。时间维随后区分:其中随生效日(2027-10-25)消解的部分,与一个真正持久的建模差异。",
+    structReconNote: "两处分歧同源:英国制度已通过但尚未生效,一层视之为「尚不可桥接」,另一层视之为「可干净桥接」。这正是引擎该暴露的、有研究价值的信号：若强行覆盖一侧,信号就被销毁了。时间维随后区分:其中随生效日(2027-10-25)消解的部分,与一个真正持久的建模差异。",
     structSetlH: "结算基底沿 bloc 断裂",
     structSetlTier: "证据分级:tier-2 运营 · 弱于 §3 的一手法律层",
     structSetlLead: "跨境稳定币栈的批发结算层不是单一共享开放轨道。公共记录显示它沿地缘 bloc 线分裂:bloc 内开放、跨 bloc 封闭。把三个实验的真实运营方标对,是把这一节从软类比变成可核查主张的关键。",
@@ -883,12 +883,12 @@ const TX = {
     structBlocBridge: "Ensemble 桥接（香港）", structBlocNone: "不在共享实验内",
     structEdgeCounts: "按 bloc 关系统计的 66 对通道",
     structConvH: "收敛:收益红线",
-    structConvLead: "跨法域(而非逐边)读,register 浮现第二个宏观 finding:相互独立的立法系统正收敛到同一条功能边界 —— 为「单纯持有」而付的收益被禁,「活动关联」的奖励被允许。这条线由同一个功能测试(转换方向、所有权披露、时点独立、收益归属、审计线索)在各法域裁决。",
+    structConvLead: "跨法域(而非逐边)读,register 浮现第二个宏观 finding:相互独立的立法系统正收敛到同一条功能边界：为「单纯持有」而付的收益被禁,「活动关联」的奖励被允许。这条线由同一个功能测试(转换方向、所有权披露、时点独立、收益归属、审计线索)在各法域裁决。",
     structConvAnchor: "锚定实例(可引用深度)", structConvSibling: "同族限制", structConvCounter: "反例",
-    structConvDisc: "纪律:仅在 tier1_legal + in_force + resolution_text 且功能线两侧都有记录处,才以可引用深度断言收敛 —— 今天只有美国。其余在册于「禁止」一侧,两侧线作为 backlog,不断言其画同一条线。这正是 register 自身的 citable-purity 纪律,是它让收敛成为 finding 而非印象。",
+    structConvDisc: "纪律:仅在 tier1_legal + in_force + resolution_text 且功能线两侧都有记录处,才以可引用深度断言收敛：今天只有美国。其余在册于「禁止」一侧,两侧线作为 backlog,不断言其画同一条线。这正是 register 自身的 citable-purity 纪律,是它让收敛成为 finding 而非印象。",
     // agents view
-    agH: "为机器而可引用 —— register 的 agent 接口",
-    agLead: "比较监管的机读知识库,越来越多不是被会权衡 caveat 的人读,而是被软件读:检索管线、语言模型 agent、自动合规工具,它们会把某字段所断言的当作事实。方法论论文的核心主张是:一个字段是不是「可作现行法引用」,应当是 build 能判定的记录属性,而非人在每次读取时重新做的判断。同一套 register 因此暴露一个 typed 的 MCP 工具面,让 agent 消费 —— 每个工具只筛选和重排已发布记录,不生成事实。",
+    agH: "为机器而可引用：register 的 agent 接口",
+    agLead: "比较监管的机读知识库,越来越多不是被会权衡 caveat 的人读,而是被软件读:检索管线、语言模型 agent、自动合规工具,它们会把某字段所断言的当作事实。方法论论文的核心主张是:一个字段是不是「可作现行法引用」,应当是 build 能判定的记录属性,而非人在每次读取时重新做的判断。同一套 register 因此暴露一个 typed 的 MCP 工具面,让 agent 消费：每个工具只筛选和重排已发布记录,不生成事实。",
     agToolSurface: (n) => `MCP 工具面 · ${n} 个 typed 工具`,
     agGuard: "护栏(每次调用都成立)",
     agSampleH: "示例调用 → 返回形状",
@@ -901,40 +901,40 @@ const TX = {
     // export
     expBtn: "导出简报（Markdown）", expBtnCorr: "导出走廊分析（Markdown）", expBtnFwd: "导出前瞻读数（Markdown）",
     expReady: "简报已生成并下载。把它交给持牌律师作为交接物。",
-    expNote: "导出为 Markdown:条款 + 出处 + 该问的问题 + 走廊 + 前瞻读数 —— 一份可交给律师的清单。不含任何合规结论。",
+    expNote: "导出为 Markdown:条款 + 出处 + 该问的问题 + 走廊 + 前瞻读数：一份可交给律师的清单。不含任何合规结论。",
     // session / seam
     sessH: "本次会话覆盖的层",
     sessNode: (n) => `节点层:${n} 个维度`, sessCorr: (n) => `走廊层:${n} 对通道`,
     sessFwd: (n) => `前瞻层:${n} 个法域读数`, sessStruct: "结构层:对账/结算/收敛",
     layerBadge: "层",
-    scopeNote: "覆盖范围:本工具从业务自述映射到节点层（法域 × 维度）—— 相关维度、对应条款（带出处）与该问的问题;并把同一份 register 的走廊可行性、时间维（生效前后）、computed 对账与 agent 接口作为上方各视图一并露出。所有内容均为 register 及其计算层的投影,不新增事实。",
+    scopeNote: "覆盖范围:本工具从业务自述映射到节点层（法域 × 维度）：相关维度、对应条款（带出处）与该问的问题;并把同一份 register 的走廊可行性、时间维（生效前后）、computed 对账与 agent 接口作为上方各视图一并露出。所有内容均为 register 及其计算层的投影,不新增事实。",
     // 12×12 corridor heat matrix
-    mxH: "全网走廊矩阵 —— 一眼看尽 132 条有向边",
+    mxH: "全网走廊矩阵：一眼看尽 132 条有向边",
     mxHint: "行是起点、列是目的地,每格是该有向边在所选日期的可行性类别。点任一格钻取该走廊。拖动上方时间轴,看已排定的生效日到来时整列翻类。",
     mxOrigin: "起点 ↓", mxDest: "目的地 →",
     mxFlip: "此格在所选日期已翻类",
     mxTodayTag: "今日快照",
     // time-travel slider (compose(as_of))
-    ttH: "时间轴 —— compose(as_of)",
+    ttH: "时间轴：compose(as_of)",
     ttHint: "把日期拖到某个已排定的生效日之后,走廊类别按 register 的时间引擎重算。已排定/已公布的翻转会自动生效;或有（无公布日）的触发不自动生效,单独标注。",
     ttAsOf: "截至日期", ttToday: "今日", ttReset: "回到今日",
     ttHorizons: "关键节点", ttScheduled: "已排定", ttContingent: "或有(无日期)",
     ttDist: "全网类别分布", ttChanged: (n) => `${n} 条边相对今日已翻类`, ttNoChange: "相对今日无翻转",
     ttGeniusCap: "美国 GENIUS §18 外限", ttUkGazette: "英国制度生效(公布)",
     ttPendingH: "或有触发（无公布日,不随时间轴自动生效）",
-    ttPendingNote: "这些制度已通过/待决但无确定生效日;它们的翻转是条件性的,时间轴不替它们下判断 —— 与 register 的「已排定 vs 或有」纪律一致。",
+    ttPendingNote: "这些制度已通过/待决但无确定生效日;它们的翻转是条件性的,时间轴不替它们下判断：与 register 的「已排定 vs 或有」纪律一致。",
     // CSV / citation export
     expCsvCorr: "导出走廊矩阵（CSV）", expCsvCite: "导出可引用记录（CSV）", expBib: "导出引用（BibTeX）",
-    expCsvCorrNote: "132 条有向边 · 起点/目的地/类别/含义/翻转日 —— 表格工具即用。",
-    expCsvCiteNote: (n) => `${n} 条可引用记录 · 每条带官方出处 URL + pinpoint —— 律所/四大交接物。`,
+    expCsvCorrNote: "132 条有向边 · 起点/目的地/类别/含义/翻转日：表格工具即用。",
+    expCsvCiteNote: (n) => `${n} 条可引用记录 · 每条带官方出处 URL + pinpoint：律所/四大交接物。`,
     expBibNote: "本 register 的 BibTeX 条目(含 DOI),供论文/备忘录引用。",
     expCff: "导出引用文件（CITATION.cff）",
-    expCffNote: "标准 Citation File Format 文件(含 DOI + ORCID)——GitHub 与 Zenodo 可直接识别。",
+    expCffNote: "标准 Citation File Format 文件(含 DOI + ORCID)：GitHub 与 Zenodo 可直接识别。",
     expDoneCsv: "已导出 CSV。",
     expDoneBib: "已导出 BibTeX。",
     expDoneCff: "已导出 CITATION.cff。",
     expPdf: "导出可引用记录 PDF",
-    expPdfNote: "46 条可引用记录的 PDF 摘要（含 DOI 页眉）——可打印、可分享的单文件。",
+    expPdfNote: "46 条可引用记录的 PDF 摘要（含 DOI 页眉）：可打印、可分享的单文件。",
     expDonePdf: "已导出 PDF。",
     expAsOfCol: "截至日期类别",
   },
@@ -943,7 +943,7 @@ const TX = {
     navMapSub: "node layer", navCorrSub: "directed feasibility + time", navSubSub: "8 constraints · 6 interactions · C1–C8", navFwdSub: "trigger register + sensitivity",
     navStructSub: "reconciliation · settlement · convergence", navAgentsSub: "MCP · citable for machines",
     // corridor "why" (grounded explanation of the computed class)
-    whyH: "Why this class — grounded in the substrate",
+    whyH: "Why this class: grounded in the substrate",
     whyRule: {
       clean: "Clean corridor · each end separately authorizable, no equivalence step in the direction of flow",
       dest_blocked: "Destination gate · an issuance prohibition applies",
@@ -953,48 +953,48 @@ const TX = {
       origin_drag: "Origin drag · the origin has no exportable authorizable token",
       compose: "Composition problem · the regimes do not compose directly",
     },
-    whyClean: "Both ends are in-force, authorizable issuance regimes; no binding constraint to cite in this direction — a clean corridor.",
-    whyNote: "This explanation is derived edge-by-edge from the register's compose() class plus the C1–C8 substrate: the class is read from the computed layer, the binding constraint from the node record — no new facts. Tap a constraint ID to see the whole grid under Substrate.",
+    whyClean: "Both ends are in-force, authorizable issuance regimes; no binding constraint to cite in this direction: a clean corridor.",
+    whyNote: "This explanation is derived edge-by-edge from the register's compose() class plus the C1–C8 substrate: the class is read from the computed layer, the binding constraint from the node record: no new facts. Tap a constraint ID to see the whole grid under Substrate.",
     // substrate view
-    subH: "Constraint substrate — the eight-constraint vocabulary and the composition problems it generates",
-    subLead: "The map projects a business onto dimensions; corridors compose two ends into feasibility. This layer is the engine beneath both: the eight regulatory constraints (C1–C8) induced in the Architecture paper. Each jurisdiction takes a pole on each constraint, built from the records that carry a constraint_ref and flagged for citability. The six interaction sets (A–F) are the composition problems joint binding generates — and they are what produce every class in the corridor view. All of it is a projection of the register; it asserts no new facts.",
+    subH: "Constraint substrate: the eight-constraint vocabulary and the composition problems it generates",
+    subLead: "The map projects a business onto dimensions; corridors compose two ends into feasibility. This layer is the engine beneath both: the eight regulatory constraints (C1–C8) induced in the Architecture paper. Each jurisdiction takes a pole on each constraint, built from the records that carry a constraint_ref and flagged for citability. The six interaction sets (A–F) are the composition problems joint binding generates: and they are what produce every class in the corridor view. All of it is a projection of the register; it asserts no new facts.",
     subTallyCit: "citable (tier1 · in force · verified)", subTallyPend: "verification backlog (tier1 · in force · unverified)", subTallyT1: "legal propositions (tier1_legal)", subTallyTot: "records total",
     subConH: "The eight constraints (C1–C8)", subConX: "Cross-border composition problem:", subConDims: "Register dimensions:",
-    subGridH: "Jurisdiction × constraint — the pole grid", subGridHint: "Each cell is the jurisdiction's pole on that constraint. Tap a cell for its justifying record(s). Colour is the evidence axis: whether that constraint cell has reached 'citable as current law', or is still in the verification backlog. This is the backlog made interactive — not an empty placeholder.",
+    subGridH: "Jurisdiction × constraint: the pole grid", subGridHint: "Each cell is the jurisdiction's pole on that constraint. Tap a cell for its justifying record(s). Colour is the evidence axis: whether that constraint cell has reached 'citable as current law', or is still in the verification backlog. This is the backlog made interactive: not an empty placeholder.",
     subStatCit: "citable pole", subStatPend: "in force · pending verification", subStatOther: "on record (draft / operational / mixed)", subStatNone: "no record",
     subPoleNone: "No record carries a constraint_ref for this cell yet.", subTension: "Tension:",
     subIntH: "The six interaction sets (A–F)", subIntLead: "The eight constraints do not operate independently. Joint binding across these six pairs generates the composition problems the paper analyses; tap a constraint ID to highlight it in the grid and vocabulary.",
     // MCP runner
-    mcpRunH: "Run it live — call a tool against the embedded register",
-    mcpRunLead: "The tool surface is not just a catalogue. Pick a tool and it runs against the register embedded above, returning the real shape — no network, no synthesis; the output is exactly the projection the deployed server's tool would return.",
+    mcpRunH: "Run it live: call a tool against the embedded register",
+    mcpRunLead: "The tool surface is not just a catalogue. Pick a tool and it runs against the register embedded above, returning the real shape: no network, no synthesis; the output is exactly the projection the deployed server's tool would return.",
     mcpArgJur: "jurisdiction", mcpArgO: "origin", mcpArgD: "destination",
-    mcpRunNote: "asserts_new_facts: false — each tool only filters and reshapes published records. This demonstrates the paper's central claim: 'citable as current law' is a record property the build can decide, so a machine gets the clean subset in one call.",
+    mcpRunNote: "asserts_new_facts: false: each tool only filters and reshapes published records. This demonstrates the paper's central claim: 'citable as current law' is a record property the build can decide, so a machine gets the clean subset in one call.",
     snapFrozen: "Frozen snapshot", snapLive: "Live-synced",
     snapAgeNew: (d) => `as of ${d}`,
     snapAge: (as_of, d) => `snapshot as of ${as_of} · ${d} days old`,
-    snapDisc: "This is one snapshot of a dated, versionable register — not a live subscription. Regulation can flip intraday (this register's Taiwan entry passed at third reading on the snapshot date itself). Verify against the primary source before relying on it.",
+    snapDisc: "This is one snapshot of a dated, versionable register: not a live subscription. Regulation can flip intraday (this register's Taiwan entry passed at third reading on the snapshot date itself). Verify against the primary source before relying on it.",
     snapDiscLive: "Synced the three evidence axes and the citable flag from the deployed register API. What follows still reflects the state at that sync.",
     clsLegendT: "Feasibility classes (Corridor Atlas, six)",
-    clsLegendHint: "Read at the destination's inbound gate, with an origin drag where the origin imposes an export/egress restriction. Inbound is systematically tighter than outbound — the two directions of one pair can fall in different classes.",
+    clsLegendHint: "Read at the destination's inbound gate, with an origin drag where the origin imposes an export/egress restriction. Inbound is systematically tighter than outbound: the two directions of one pair can fall in different classes.",
     ovLabel: "origin export restriction",
-    corrH: "The corridor layer — what clears, what breaks along a flow, and which day it changes",
+    corrH: "The corridor layer: what clears, what breaks along a flow, and which day it changes",
     corrLead: "The node layer tells you what each jurisdiction requires on its own; the corridor layer composes the two ends and gives this directed corridor's feasibility class today, its change on a future commencement date, and what happens to it if a pending change in law is enacted. The classes below are derived edge-by-edge by the register's compose() engine from the per-jurisdiction signal table (a labelled preview, not an authoritative verdict).",
     corrPickO: "Origin jurisdiction", corrPickD: "Destination jurisdiction",
     corrSame: "Pick two different jurisdictions to read the directed corridor.",
     corrToday: "Class today", corrReverse: "Reverse", corrAsym: "Directional asymmetry",
     corrUndir: "Undirected composite", corrOverride: "This direction carries an origin export-restriction drag.",
     corrTransH: "Scheduled changes (by commencement date)", corrTransNone: "This direction's class does not change before any scheduled commencement date.",
-    corrFlip: (dt, f, to) => `${dt} — flips ${f} → ${to}`,
+    corrFlip: (dt, f, to) => `${dt}: flips ${f} → ${to}`,
     corrWhatifH: "If a pending change in law is enacted (if-enacted, not a forecast)",
     corrWhatifNone: "No pending change in law would move this corridor's class.",
     corrBloc: "Settlement substrate", corrBlocSame: (b) => `both ends on the ${b} bloc-internal rail`,
-    corrBlocCross: "cross-bloc — the ends sit on rival settlement experiments, not mutually interoperable",
+    corrBlocCross: "cross-bloc: the ends sit on rival settlement experiments, not mutually interoperable",
     corrBlocBridge: "via Hong Kong's Project Ensemble bridge position",
     corrBlocOff: "neither end sits on a shared settlement experiment",
     corrWorkedH: "Hand-authored corridor (deep sample)",
-    corrWorkedHint: "The classes above are the computed skeleton for all 66 pairs; below is one corridor hand-verified to clause depth. Marked honestly: the BR leg is verified, the HK leg is still in the verification backlog — the methodology's own honest-residual discipline, not filled in from nothing.",
+    corrWorkedHint: "The classes above are the computed skeleton for all 66 pairs; below is one corridor hand-verified to clause depth. Marked honestly: the BR leg is verified, the HK leg is still in the verification backlog: the methodology's own honest-residual discipline, not filled in from nothing.",
     corrExample: "Example corridors", corrExDated: "dated flip", corrExPre: "pre-regime origin", corrExBlocked: "blocked destination",
-    fwdH: "The time engine — pending changes in law, and where they land on the directed map",
+    fwdH: "The time engine: pending changes in law, and where they land on the directed map",
     fwdLead: "The static map is a photograph. The forward layer lists, one at a time, the changes in law already visible on the public record but not yet effective: each states which directed edges change class, which records it rests on, and the conditional status under which it is itself contingent. This is conditioning, not forecasting: one if-then per change in law, no probabilities, no invented dates.",
     fwdSensH: "Corridor-sensitivity ordering", fwdSensHint: "How many directed edges a pending trigger reclassifies on resolution. This is a statement about graph structure (whether the trigger is one- or both-directional and the jurisdiction's in-/out-degree), not about which bill will pass.",
     fwdRank: "Rank", fwdEdges: "edges reclassified", fwdFanIn: "fan-in", fwdFanOut: "fan-out", fwdBoth: "both-directions trigger",
@@ -1008,13 +1008,13 @@ const TX = {
     fwdOwnEv: "Own pending events", fwdInb: "Inbound reclassified", fwdOutb: "Outbound reclassified", fwdExp: "Counterpart exposure (by exposure)",
     fwdNoEv: "No pending event of its own.", fwdNoInb: "No inbound edge reclassifies under the pending set.", fwdNoOutb: "No outbound edge reclassifies under the pending set.",
     fwdMoves: "moves class", fwdAccess: "accessibility-only (intra-regime gating)",
-    fwdAccessNote: "The distinction that matters: this kind of change alters who may operate and which tokens are admissible, but moves no feasibility class. A class-centric measure registers it as 'nothing' — so a low sensitivity position must be read as 'no class flip pending', not 'nothing happening'. The EU's 2026-07-01 MiCA transitional expiry is exactly this kind.",
+    fwdAccessNote: "The distinction that matters: this kind of change alters who may operate and which tokens are admissible, but moves no feasibility class. A class-centric measure registers it as 'nothing': so a low sensitivity position must be read as 'no class flip pending', not 'nothing happening'. The EU's 2026-07-01 MiCA transitional expiry is exactly this kind.",
     fwdVia: "trigger", fwdTiming: "timing",
-    structH: "The macro structure — the methodology's proof, and one fracture the static map cannot express",
+    structH: "The macro structure: the methodology's proof, and one fracture the static map cannot express",
     structReconH: "Computed-vs-authored reconciliation",
-    structReconLead: "The methodology paper's most original element: derive the same downstream conclusion (corridor feasibility) twice — once by hand, once by a small auditable rule engine over a provenance-annotated signal table — then surface every divergence as a finding rather than silently reconciling it in favour of either side. The computed layer ships as a labelled preview, not an authoritative verdict. Below is that reconciliation, live:",
+    structReconLead: "The methodology paper's most original element: derive the same downstream conclusion (corridor feasibility) twice: once by hand, once by a small auditable rule engine over a provenance-annotated signal table: then surface every divergence as a finding rather than silently reconciling it in favour of either side. The computed layer ships as a labelled preview, not an authoritative verdict. Below is that reconciliation, live:",
     structAgree: "pairs agree", structPairs: "jurisdiction pairs", structFindings: "divergences (kept as findings)",
-    structReconNote: "Both divergences share one cause: the United Kingdom's regime is adopted but not yet operative; one layer treats it as not-yet-bridgeable, the other as cleanly bridgeable. That is exactly the research-valuable signal the engine should expose — overwriting one side would destroy it. The time dimension then separates the part that resolves on the commencement date (2027-10-25) from a genuine, durable modelling difference.",
+    structReconNote: "Both divergences share one cause: the United Kingdom's regime is adopted but not yet operative; one layer treats it as not-yet-bridgeable, the other as cleanly bridgeable. That is exactly the research-valuable signal the engine should expose: overwriting one side would destroy it. The time dimension then separates the part that resolves on the commencement date (2027-10-25) from a genuine, durable modelling difference.",
     structSetlH: "The settlement substrate, split along bloc lines",
     structSetlTier: "evidence grade: tier-2 operational · weaker than the tier1 legal layer of §3",
     structSetlLead: "The wholesale settlement substrate beneath the issuance layer is not a single shared open rail. The public record shows it split along geopolitical bloc lines: open within a bloc, closed across. Getting the true operators of each experiment right is what turns this from a soft analogy into a checkable claim.",
@@ -1023,11 +1023,11 @@ const TX = {
     structBlocBridge: "Ensemble bridge (Hong Kong)", structBlocNone: "off the shared experiments",
     structEdgeCounts: "66 corridors by bloc relationship",
     structConvH: "Convergence: the yield line",
-    structConvLead: "Read across jurisdictions rather than edge by edge, the register surfaces a second macro finding: independent legislative systems are converging on the same functional boundary around stablecoin yield — yield for merely holding is prohibited, activity-linked rewards are permitted. The line is decided by the same functional test (conversion-direction, ownership-disclosure, timing-independence, yield-attribution, audit-trail) across jurisdictions.",
+    structConvLead: "Read across jurisdictions rather than edge by edge, the register surfaces a second macro finding: independent legislative systems are converging on the same functional boundary around stablecoin yield: yield for merely holding is prohibited, activity-linked rewards are permitted. The line is decided by the same functional test (conversion-direction, ownership-disclosure, timing-independence, yield-attribution, audit-trail) across jurisdictions.",
     structConvAnchor: "Anchor (citable depth)", structConvSibling: "Sibling restriction", structConvCounter: "Counter-example",
-    structConvDisc: "Discipline: convergence is asserted at citable depth only where the cell is tier1_legal + in_force + resolution_text AND both sides of the line are documented — today, the United States alone. The rest are recorded on the prohibited side, with the two-sided line carried as backlog, not asserted as drawing the same line. This is the register's own citable-purity discipline — what keeps the convergence a finding, not an impression.",
-    agH: "Citable for machines — the register's agent surface",
-    agLead: "Machine-readable knowledge bases of comparative regulation are increasingly read not by a human who can weigh a caveat but by software: retrieval pipelines, language-model agents, automated compliance tools, that treat whatever a field asserts as fact. The methodology paper's core claim is that whether a record may be cited as current binding law should be a build-decidable property, not a judgment a human re-makes on every read. The same register therefore exposes a typed MCP surface for agents to consume — each tool only filters and reshapes published records; no facts are generated.",
+    structConvDisc: "Discipline: convergence is asserted at citable depth only where the cell is tier1_legal + in_force + resolution_text AND both sides of the line are documented: today, the United States alone. The rest are recorded on the prohibited side, with the two-sided line carried as backlog, not asserted as drawing the same line. This is the register's own citable-purity discipline: what keeps the convergence a finding, not an impression.",
+    agH: "Citable for machines: the register's agent surface",
+    agLead: "Machine-readable knowledge bases of comparative regulation are increasingly read not by a human who can weigh a caveat but by software: retrieval pipelines, language-model agents, automated compliance tools, that treat whatever a field asserts as fact. The methodology paper's core claim is that whether a record may be cited as current binding law should be a build-decidable property, not a judgment a human re-makes on every read. The same register therefore exposes a typed MCP surface for agents to consume: each tool only filters and reshapes published records; no facts are generated.",
     agToolSurface: (n) => `MCP surface · ${n} typed tools`,
     agGuard: "Guardrails (hold on every call)",
     agSampleH: "Sample call → response shape",
@@ -1039,39 +1039,39 @@ const TX = {
     agConsume: "who consumes this layer",
     expBtn: "Export briefing (Markdown)", expBtnCorr: "Export corridor analysis (Markdown)", expBtnFwd: "Export forward reading (Markdown)",
     expReady: "Briefing generated and downloaded. Hand it to a licensed lawyer as the handoff.",
-    expNote: "Exports as Markdown: provisions + sources + questions to ask + corridors + forward readings — a checklist you can hand to a lawyer. It contains no compliance conclusion.",
+    expNote: "Exports as Markdown: provisions + sources + questions to ask + corridors + forward readings: a checklist you can hand to a lawyer. It contains no compliance conclusion.",
     sessH: "Layers this session covered",
     sessNode: (n) => `Node layer: ${n} dimensions`, sessCorr: (n) => `Corridor layer: ${n} pairs`,
     sessFwd: (n) => `Forward layer: ${n} jurisdiction readings`, sessStruct: "Structure layer: reconciliation/settlement/convergence",
     layerBadge: "layer",
-    scopeNote: "Coverage: from a business description this maps the node layer (jurisdiction × dimension) — relevant dimensions, governing provisions with sources, and the questions to ask; and it surfaces the same register's corridor feasibility, time dimension, computed reconciliation, and agent surface in the views above. Everything is a projection of the register and its computed layer; no facts are added.",
+    scopeNote: "Coverage: from a business description this maps the node layer (jurisdiction × dimension): relevant dimensions, governing provisions with sources, and the questions to ask; and it surfaces the same register's corridor feasibility, time dimension, computed reconciliation, and agent surface in the views above. Everything is a projection of the register and its computed layer; no facts are added.",
     // 12×12 corridor heat matrix
-    mxH: "Full corridor matrix — all 132 directed edges at a glance",
+    mxH: "Full corridor matrix: all 132 directed edges at a glance",
     mxHint: "Rows are origins, columns are destinations; each cell is that directed edge's feasibility class on the selected date. Click any cell to drill into the corridor. Drag the timeline above to watch whole columns reclassify as scheduled commencement dates arrive.",
     mxOrigin: "Origin ↓", mxDest: "Destination →",
     mxFlip: "This cell has reclassified on the selected date",
     mxTodayTag: "today's snapshot",
     // time-travel slider (compose(as_of))
-    ttH: "Timeline — compose(as_of)",
+    ttH: "Timeline: compose(as_of)",
     ttHint: "Drag the date past a scheduled commencement and corridor classes recompute from the register's time engine. Scheduled / gazetted flips apply automatically; contingent (undated) triggers do not, and are noted separately.",
     ttAsOf: "As of", ttToday: "today", ttReset: "Back to today",
     ttHorizons: "Key horizons", ttScheduled: "scheduled", ttContingent: "contingent (no date)",
     ttDist: "Full-network class distribution", ttChanged: (n) => `${n} edges reclassified vs today`, ttNoChange: "no flips vs today",
     ttGeniusCap: "US GENIUS §18 outer cap", ttUkGazette: "UK regime operative (gazetted)",
     ttPendingH: "Contingent triggers (no gazetted date, do not auto-apply on the timeline)",
-    ttPendingNote: "These regimes are enacted / pending but carry no fixed commencement date; their flips are conditional and the timeline does not decide them for you — consistent with the register's scheduled-vs-contingent discipline.",
+    ttPendingNote: "These regimes are enacted / pending but carry no fixed commencement date; their flips are conditional and the timeline does not decide them for you: consistent with the register's scheduled-vs-contingent discipline.",
     // CSV / citation export
     expCsvCorr: "Export corridor matrix (CSV)", expCsvCite: "Export citable records (CSV)", expBib: "Export citation (BibTeX)",
-    expCsvCorrNote: "132 directed edges · origin/destination/class/meaning/flip-date — ready for a spreadsheet.",
-    expCsvCiteNote: (n) => `${n} citable records · each with its official source URL + pinpoint — a law-firm / Big-Four handoff.`,
+    expCsvCorrNote: "132 directed edges · origin/destination/class/meaning/flip-date: ready for a spreadsheet.",
+    expCsvCiteNote: (n) => `${n} citable records · each with its official source URL + pinpoint: a law-firm / Big-Four handoff.`,
     expBibNote: "A BibTeX entry for this register (with DOI), for citing in a paper or memo.",
     expCff: "Export citation file (CITATION.cff)",
-    expCffNote: "A standard Citation File Format file (with DOI + ORCID) — recognised by GitHub and Zenodo.",
+    expCffNote: "A standard Citation File Format file (with DOI + ORCID): recognised by GitHub and Zenodo.",
     expDoneCsv: "CSV exported.",
     expDoneBib: "BibTeX exported.",
     expDoneCff: "CITATION.cff exported.",
     expPdf: "Export citable-records PDF",
-    expPdfNote: "A PDF summary of the 46 citable records (with DOI header) — a printable, shareable single file.",
+    expPdfNote: "A PDF summary of the 46 citable records (with DOI header): a printable, shareable single file.",
     expDonePdf: "PDF exported.",
     expAsOfCol: "class as of date",
   },
@@ -1084,18 +1084,18 @@ const CLASS_LABEL = {
 };
 const CLASS_MEANING = {
   zh: {
-    I: "双向可授权 —— 两端各自可获授权,顺流方向无需等效步骤(最干净)",
-    II: "需等效 / 承认 / 通道认定 —— 入境取决于非普遍授予的裁量认定(受限通道)",
-    III: "组合问题未决 —— origin 缺可出口可授权代币,或两制度无法组合(降为合作/协调)",
-    T: "目的地制度在途 —— 制度已通过但尚未生效",
+    I: "双向可授权：两端各自可获授权,顺流方向无需等效步骤(最干净)",
+    II: "需等效 / 承认 / 通道认定：入境取决于非普遍授予的裁量认定(受限通道)",
+    III: "组合问题未决：origin 缺可出口可授权代币,或两制度无法组合(降为合作/协调)",
+    T: "目的地制度在途：制度已通过但尚未生效",
     blocked: "目的地存在发行禁止",
     pre_regime: "目的地尚无可授权发行路径",
   },
   en: {
-    I: "dual authorization available — each end separately authorizable, no equivalence step in the direction of flow (cleanest)",
-    II: "equivalence / recognition / channel determination required — entry turns on a determination not generically granted (channelled)",
-    III: "composition problem unresolved — origin lacks an exportable authorizable token, or the regimes interact unresolvably (reduces to partnership / coordination)",
-    T: "regime-in-transition at destination — regime adopted but not yet operative",
+    I: "dual authorization available: each end separately authorizable, no equivalence step in the direction of flow (cleanest)",
+    II: "equivalence / recognition / channel determination required: entry turns on a determination not generically granted (channelled)",
+    III: "composition problem unresolved: origin lacks an exportable authorizable token, or the regimes interact unresolvably (reduces to partnership / coordination)",
+    T: "regime-in-transition at destination: regime adopted but not yet operative",
     blocked: "issuance prohibition at destination",
     pre_regime: "no authorizable issuance pathway yet at destination",
   },
@@ -1706,7 +1706,7 @@ function CorridorMatrix({ t, ui, asOf, onPick }) {
                   return (
                     <td key={d}
                       className={"mx-cell mx-" + (CLASS_TONE[cls] || "open") + (flipped ? " mx-flip" : "")}
-                      title={o + "→" + d + ": " + ((CLASS_LABEL[ui] || CLASS_LABEL.en)[cls] || cls) + " — " + meaning + (flipped ? " · " + t.mxFlip : "")}
+                      title={o + "→" + d + ": " + ((CLASS_LABEL[ui] || CLASS_LABEL.en)[cls] || cls) + ": " + meaning + (flipped ? " · " + t.mxFlip : "")}
                       onClick={() => onPick(o, d)}
                       role="button" tabIndex={0}
                       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPick(o, d); } }}
@@ -1890,7 +1890,7 @@ function StructureView({ t, ui }) {
     <div className="view">
       <h2 className="view-h">{t.structH}</h2>
 
-      {/* Reconciliation — proves the methodology paper's central claim */}
+      {/* Reconciliation: proves the methodology paper's central claim */}
       <div className="struct-sec">
         <div className="struct-sec-h">{t.structReconH}</div>
         <div className="struct-lead">{t.structReconLead}</div>
@@ -1924,7 +1924,7 @@ function StructureView({ t, ui }) {
                 ))}
               </div>
               {setl.experiments[g.key === "agora" ? "agora" : g.key === "mbridge" ? "mbridge" : null] && (
-                <div className="setl-exp">{setl.experiments[g.key].name} — {setl.experiments[g.key].settlement_currency_orientation}</div>
+                <div className="setl-exp">{setl.experiments[g.key].name}: {setl.experiments[g.key].settlement_currency_orientation}</div>
               )}
             </div>
           ))}
@@ -2057,7 +2057,7 @@ function axesLine(rec, t) {
 function buildBriefingMd(result, framed, audience, jurs, ui, t) {
   const L = [];
   const age = snapshotAge(DATA.meta.as_of);
-  L.push(`# ${t.title} — ${ui === "zh" ? "研究简报" : "research briefing"}`);
+  L.push(`# ${t.title}: ${ui === "zh" ? "研究简报" : "research briefing"}`);
   L.push("");
   L.push(`> ${DATA.meta.name} v${DATA.meta.version} · ${t.snapAge(DATA.meta.as_of, age)} · ${DATA.meta.record_count} records · ${DATA.meta.citable_count} ${t.citableWord}`);
   L.push(`>`);
@@ -2083,7 +2083,7 @@ function buildBriefingMd(result, framed, audience, jurs, ui, t) {
       for (const x of d.jurs) {
         if (x.rec) {
           const r = x.rec;
-          L.push(`- **${x.jur}** — ${r.requirement_summary}${r.citable ? "  ✓ " + t.citableWord : ""}`);
+          L.push(`- **${x.jur}**: ${r.requirement_summary}${r.citable ? "  ✓ " + t.citableWord : ""}`);
           L.push(`  - ${axesLine(r, t)}`);
           L.push(`  - source: ${r.source_primary}${r.pinpoint ? " · pinpoint: " + r.pinpoint : ""}`);
           L.push(`  - record: ${r.id}${r.authority ? " · " + r.authority : ""}${r.url ? " · " + r.url : ""}`);
@@ -2094,7 +2094,7 @@ function buildBriefingMd(result, framed, audience, jurs, ui, t) {
             for (const q of qs) L.push(`    - ${q}`);
           }
         } else {
-          L.push(`- **${x.jur}** — ${t.noRec}. ${t.gapBody(DATA.jurisdictions[x.jur])}`);
+          L.push(`- **${x.jur}**: ${t.noRec}. ${t.gapBody(DATA.jurisdictions[x.jur])}`);
         }
       }
       L.push("");
@@ -2112,10 +2112,10 @@ function buildBriefingMd(result, framed, audience, jurs, ui, t) {
     if (e && e.fwd) pairs.push({ o: jurs[i], d: jurs[k], e });
   }
   if (pairs.length) {
-    L.push(`## ${t.navCorr} — ${t.corrToday}`);
+    L.push(`## ${t.navCorr}: ${t.corrToday}`);
     for (const p of pairs) {
       const label = (CLASS_LABEL[ui] || CLASS_LABEL.en)[p.e.fwd.c] || p.e.fwd.c;
-      L.push(`- **${p.o} → ${p.d}**: ${label}${p.e.fwd.o ? " (⚑ " + t.ovLabel + ")" : ""} — ${(CLASS_MEANING[ui] || CLASS_MEANING.en)[p.e.fwd.c]}`);
+      L.push(`- **${p.o} → ${p.d}**: ${label}${p.e.fwd.o ? " (⚑ " + t.ovLabel + ")" : ""}: ${(CLASS_MEANING[ui] || CLASS_MEANING.en)[p.e.fwd.c]}`);
       const tr = p.e.entry.t ? p.e.entry.t.filter((x) => x.e === p.o + "->" + p.d) : [];
       for (const x of tr) L.push(`  - ${t.corrFlip(x.dt, x.f, x.to)}`);
     }
@@ -2125,14 +2125,14 @@ function buildBriefingMd(result, framed, audience, jurs, ui, t) {
   // Forward layer for selected jurisdictions
   const fwdJurs = jurs.filter((j) => COMPUTE.forward[j]);
   if (fwdJurs.length) {
-    L.push(`## ${t.navFwd} — ${t.fwdJurH}`);
+    L.push(`## ${t.navFwd}: ${t.fwdJurH}`);
     for (const j of fwdJurs) {
       const F = COMPUTE.forward[j];
       L.push(`### ${j} (${DATA.jurisdictions[j]})`);
       L.push(F.reading);
       for (const e of F.events) {
         const tag = e.moves_class ? t.fwdMoves : e.accessibility_only ? t.fwdAccess : ((KIND_LABEL[ui] || KIND_LABEL.en)[e.trigger_kind] || e.trigger_kind);
-        L.push(`- [${tag}]${e.effective_date ? " " + e.effective_date : ""} — ${e.title}`);
+        L.push(`- [${tag}]${e.effective_date ? " " + e.effective_date : ""}: ${e.title}`);
       }
       L.push("");
     }
@@ -2220,26 +2220,26 @@ function Nav({ view, setView, t }) {
 // register dimension(s) that instantiate it.
 const CONSTRAINTS_FULL = [
   { id: "C1", dim: ["issuer_pathway"],
-    zh: { n: "发行人资格", d: "谁可以发行法币锚定稳定币。各法域都把发行限定给一组受监管实体。", x: "跨法域的合格发行人类别并不重合,且除美国 GENIUS §18 的等效认定外无互认 —— 任何跨境运营要么在每个发行法域各自持牌,要么走合作分销,要么单一法域发行 + 用户侧跨境持有。" },
-    en: { n: "Issuer eligibility", d: "Who may issue a fiat-referenced stablecoin. Every surveyed regime restricts issuance to a defined set of regulated entities.", x: "The eligible-issuer categories are not coextensive across borders and — outside the US GENIUS §18 comparability process — carry no reciprocal recognition; a cross-border operation must hold eligibility in every issuing jurisdiction, run partnership distribution, or issue in one jurisdiction and rely on user-side holding." } },
+    zh: { n: "发行人资格", d: "谁可以发行法币锚定稳定币。各法域都把发行限定给一组受监管实体。", x: "跨法域的合格发行人类别并不重合,且除美国 GENIUS §18 的等效认定外无互认：任何跨境运营要么在每个发行法域各自持牌,要么走合作分销,要么单一法域发行 + 用户侧跨境持有。" },
+    en: { n: "Issuer eligibility", d: "Who may issue a fiat-referenced stablecoin. Every surveyed regime restricts issuance to a defined set of regulated entities.", x: "The eligible-issuer categories are not coextensive across borders and: outside the US GENIUS §18 comparability process: carry no reciprocal recognition; a cross-border operation must hold eligibility in every issuing jurisdiction, run partnership distribution, or issue in one jurisdiction and rely on user-side holding." } },
   { id: "C2", dim: ["reserve_backing", "capital_requirements", "custody"],
-    zh: { n: "储备构成与托管", d: "什么资产可作储备、谁可托管。各法域限定为高质流动资产 + 隔离托管 + 定期审计。", x: "储备构成绑定参考货币:美元锚定币的储备须由美国监管的托管人持有美元资产,不能仅凭该授权转到他法域托管 —— 跨货币运营必须多发行人各自持牌,再以不需转移储备的桥接相连。" },
-    en: { n: "Reserve composition & custody", d: "Which assets may back the liability and who custodies them — high-quality liquid assets, segregated custody, periodic audit.", x: "Reserve composition is tied to the reference currency: a USD token's reserves sit at a US-supervised custodian in dollar assets and cannot move to a foreign custodian on that authorization — cross-currency operation needs multiple issuers bridged without reserve transfer." } },
+    zh: { n: "储备构成与托管", d: "什么资产可作储备、谁可托管。各法域限定为高质流动资产 + 隔离托管 + 定期审计。", x: "储备构成绑定参考货币:美元锚定币的储备须由美国监管的托管人持有美元资产,不能仅凭该授权转到他法域托管：跨货币运营必须多发行人各自持牌,再以不需转移储备的桥接相连。" },
+    en: { n: "Reserve composition & custody", d: "Which assets may back the liability and who custodies them: high-quality liquid assets, segregated custody, periodic audit.", x: "Reserve composition is tied to the reference currency: a USD token's reserves sit at a US-supervised custodian in dollar assets and cannot move to a foreign custodian on that authorization: cross-currency operation needs multiple issuers bridged without reserve transfer." } },
   { id: "C3", dim: ["permitted_activity_yield"],
-    zh: { n: "收益禁止及其边界 — 支柱一", d: "禁止就「持有」向持有人支付利息/收益。", x: "美国 GENIUS §4(a)(11) 的「solely in connection with holding」是活的分界:持有付息被禁,但用户主动把持有转入独立收益资产是否落入 §404 禁止,取决于该路由是发行人「授权代理人」还是用户导向的经纪 —— 这是与 C4 的接合点。" },
-    en: { n: "Yield prohibition & boundaries — SPINE 1", d: "No interest or yield to holders in connection with the holding itself.", x: "The 'solely in connection with holding' line (GENIUS §4(a)(11)) is the live boundary: holder yield is banned, but whether user-directed routing into a separate yield-bearing instrument falls inside §404 turns on whether the router is an authorized agent or a user-directed broker — the join with C4." } },
+    zh: { n: "收益禁止及其边界: 支柱一", d: "禁止就「持有」向持有人支付利息/收益。", x: "美国 GENIUS §4(a)(11) 的「solely in connection with holding」是活的分界:持有付息被禁,但用户主动把持有转入独立收益资产是否落入 §404 禁止,取决于该路由是发行人「授权代理人」还是用户导向的经纪：这是与 C4 的接合点。" },
+    en: { n: "Yield prohibition & boundaries: SPINE 1", d: "No interest or yield to holders in connection with the holding itself.", x: "The 'solely in connection with holding' line (GENIUS §4(a)(11)) is the live boundary: holder yield is banned, but whether user-directed routing into a separate yield-bearing instrument falls inside §404 turns on whether the router is an authorized agent or a user-directed broker: the join with C4." } },
   { id: "C4", dim: ["securities_classification"],
-    zh: { n: "证券归类边界 — 支柱二", d: "该工具是否构成证券(美国 Reves/Howey;欧盟 MiCA 分类;各法域各自的分界)。", x: "合规支付稳定币本身是非证券,但把它路由进代币化货币基金份额的那一步跨越了证券边界 —— 执行该路由的中介是否因此成为经纪/证券分销,是与 C3 同一条边界的另一面。" },
-    en: { n: "Securities classification — SPINE 2", d: "Whether the instrument is a security (US Reves/Howey; EU MiCA categories; each regime's own line).", x: "A compliant payment stablecoin is a non-security, but routing it into tokenised money-market-fund shares crosses the securities boundary at the point of routing — whether the executing intermediary thereby becomes a broker is the same boundary as C3 viewed from the securities side." } },
+    zh: { n: "证券归类边界: 支柱二", d: "该工具是否构成证券(美国 Reves/Howey;欧盟 MiCA 分类;各法域各自的分界)。", x: "合规支付稳定币本身是非证券,但把它路由进代币化货币基金份额的那一步跨越了证券边界：执行该路由的中介是否因此成为经纪/证券分销,是与 C3 同一条边界的另一面。" },
+    en: { n: "Securities classification: SPINE 2", d: "Whether the instrument is a security (US Reves/Howey; EU MiCA categories; each regime's own line).", x: "A compliant payment stablecoin is a non-security, but routing it into tokenised money-market-fund shares crosses the securities boundary at the point of routing: whether the executing intermediary thereby becomes a broker is the same boundary as C3 viewed from the securities side." } },
   { id: "C5", dim: ["bank_nonbank_routing"],
-    zh: { n: "银行/非银行地位与路由禁止", d: "架构中每个实体的银行或非银行地位,及其对可从事路由安排的后果。", x: "同一运营模式可能因主体是银行或非银行而被许可或被禁;§404 恰在此运作 —— 谁算「关联方/授权代理人」取决于按银行法确定的关联结构。选择须跨法域联合作出。" },
-    en: { n: "Bank / non-bank status & routing", d: "The bank-or-non-bank status of each entity and its consequences for permitted routing arrangements.", x: "The same pattern may be permitted or prohibited depending on bank vs non-bank configuration; §404 operates here — who counts as an affiliate or authorized agent turns on the affiliation structure fixed by banking law. The choice must be made jointly across jurisdictions." } },
+    zh: { n: "银行/非银行地位与路由禁止", d: "架构中每个实体的银行或非银行地位,及其对可从事路由安排的后果。", x: "同一运营模式可能因主体是银行或非银行而被许可或被禁;§404 恰在此运作：谁算「关联方/授权代理人」取决于按银行法确定的关联结构。选择须跨法域联合作出。" },
+    en: { n: "Bank / non-bank status & routing", d: "The bank-or-non-bank status of each entity and its consequences for permitted routing arrangements.", x: "The same pattern may be permitted or prohibited depending on bank vs non-bank configuration; §404 operates here: who counts as an affiliate or authorized agent turns on the affiliation structure fixed by banking law. The choice must be made jointly across jurisdictions." } },
   { id: "C6", dim: ["cross_border_data"],
-    zh: { n: "跨境支付与数据主权", d: "支付指令与个人数据的跨境流动(中国 PIPL/DSL、欧盟 GDPR、FATF 旅行规则)。", x: "任何触及中国境的资金/数据流须实现其要求的出境机制;触及欧盟居民数据须实现相应机制 —— 当一条通道同时触及两者,合规负担叠加,实质约束可行的运营模式。" },
-    en: { n: "Cross-border payment & data sovereignty", d: "Movement of payment instructions and personal data across borders (PRC PIPL/DSL, EU GDPR, FATF Travel Rule).", x: "Any flow crossing the PRC boundary must implement its transfer mechanism, and any flow touching EU-resident data must implement the EU mechanism — a corridor touching both carries a layered compliance burden that materially constrains the available pattern." } },
+    zh: { n: "跨境支付与数据主权", d: "支付指令与个人数据的跨境流动(中国 PIPL/DSL、欧盟 GDPR、FATF 旅行规则)。", x: "任何触及中国境的资金/数据流须实现其要求的出境机制;触及欧盟居民数据须实现相应机制：当一条通道同时触及两者,合规负担叠加,实质约束可行的运营模式。" },
+    en: { n: "Cross-border payment & data sovereignty", d: "Movement of payment instructions and personal data across borders (PRC PIPL/DSL, EU GDPR, FATF Travel Rule).", x: "Any flow crossing the PRC boundary must implement its transfer mechanism, and any flow touching EU-resident data must implement the EU mechanism: a corridor touching both carries a layered compliance burden that materially constrains the available pattern." } },
   { id: "C7", dim: ["monetary_sovereignty"],
-    zh: { n: "货币主权与储备货币不对称", d: "宏观层关切:外币(尤其美元)锚定币的流通可能侵蚀货币政策传导、铸币税或金融稳定。", x: "美元与他币不对称 —— 三种机制作为回应:欧盟 MiCA Art.58(3) 数量上限、阿联酋在岸渠道限制、中国全面禁止。跨境非本币流通必须叠加受方法域的主权约束,而非只看运营约束。" },
-    en: { n: "Monetary sovereignty & reserve-currency asymmetry", d: "The macro concern that foreign-currency (especially USD) token circulation may erode monetary transmission, seigniorage, or financial stability.", x: "The dollar/other asymmetry draws three responses — the MiCA Art.58(3) means-of-exchange cap, the UAE onshore channel restriction, and the PRC categorical prohibition — so any non-domestic-currency flow must add the receiving jurisdiction's sovereignty constraint on top of its operational ones." } },
+    zh: { n: "货币主权与储备货币不对称", d: "宏观层关切:外币(尤其美元)锚定币的流通可能侵蚀货币政策传导、铸币税或金融稳定。", x: "美元与他币不对称：三种机制作为回应:欧盟 MiCA Art.58(3) 数量上限、阿联酋在岸渠道限制、中国全面禁止。跨境非本币流通必须叠加受方法域的主权约束,而非只看运营约束。" },
+    en: { n: "Monetary sovereignty & reserve-currency asymmetry", d: "The macro concern that foreign-currency (especially USD) token circulation may erode monetary transmission, seigniorage, or financial stability.", x: "The dollar/other asymmetry draws three responses: the MiCA Art.58(3) means-of-exchange cap, the UAE onshore channel restriction, and the PRC categorical prohibition: so any non-domestic-currency flow must add the receiving jurisdiction's sovereignty constraint on top of its operational ones." } },
   { id: "C8", dim: ["disclosure_reporting", "distribution"],
     zh: { n: "披露、报告与监管协调", d: "发行人的披露、对监管者的报告,以及多监管者间的协调机制。", x: "二阶约束:满足它要求以监管者可核查的方式满足 C1–C7 的每一项。跨法域监管协调仍欠发达,故证明合规的负担落在运营方身上,本身可能成为约束可行模式的瓶颈。" },
     en: { n: "Disclosure, reporting & supervisory coordination", d: "Issuer disclosure, reporting to the supervisor, and coordination among the multiple supervisors over a cross-border operation.", x: "A second-order constraint: satisfying it requires satisfying every other constraint in a supervisor-verifiable way. Cross-jurisdictional coordination is underdeveloped, so the proof-of-compliance burden falls on the operator and can itself become the binding constraint." } },
@@ -2443,7 +2443,7 @@ function SubstrateView({ t, ui, sj, setSj, sc, setSc }) {
       <h2 className="view-h">{t.subH}</h2>
       <p className="view-lead">{t.subLead}</p>
 
-      {/* citability tally — the substrate's own completeness, live from the snapshot */}
+      {/* citability tally: the substrate's own completeness, live from the snapshot */}
       <div className="sub-tally">
         <div className="sub-tally-c sub-cit"><b>{tally.citable}</b><span>{t.subTallyCit}</span></div>
         <div className="sub-tally-c sub-pend"><b>{tally.backlog}</b><span>{t.subTallyPend}</span></div>
@@ -2918,7 +2918,7 @@ export default function App() {
                 <button className="aioff-cfg-btn" onClick={applyProxy}>{t.proxyApply}</button>
               </div>
               {proxyApplied
-                ? <div className="aioff-cfg-note ok">{t.proxyOn} <code>{proxyApplied}</code> — {t.proxyRetry}</div>
+                ? <div className="aioff-cfg-note ok">{t.proxyOn} <code>{proxyApplied}</code>: {t.proxyRetry}</div>
                 : <div className="aioff-cfg-note">{t.proxyHint}</div>}
             </div>
             <button className="aioff-jump" onClick={() => { setManualMode(true); }}>{t.aiOffManual} ↓</button>
