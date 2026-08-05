@@ -8,6 +8,11 @@ const CONTACT = "mailto:yunjiefan.research@gmail.com"; // enables the CTA seam a
 const LLM_PROXY = "";    // self-host only: URL of YOUR authenticated proxy for /v1/messages.
                          // Leave "" in the Anthropic artifact sandbox (auth is injected there).
                          // See DEPLOYMENT.md for a ready-to-deploy Cloudflare Worker example.
+// Model string for every AI-backed call. It was previously buried inside callClaude, which made a
+// "model not found" failure look like a mapping bug. Hoisted here so it is checked and changed in
+// one place: verify the string your Anthropic account actually serves at docs.claude.com before
+// going live — a wrong string returns HTTP 404, not a network error.
+const AI_MODEL = "claude-sonnet-4-6";
 
 // AI-backed features (document / URL import, the auto-map router, question generation) POST to
 // an authenticated model endpoint. That auth is injected by the hosting environment (the Anthropic
@@ -33,13 +38,37 @@ const AI_AVAILABLE = (() => {
 // The in-UI proxy field (shown in the degraded-mode banner) calls setAiProxy() to override this at
 // runtime for the session — so a self-hoster can paste their proxy URL and restore AI without a
 // redeploy. It's a module-level mutable read fresh on every callClaude, not React state.
-let AI_PROXY = LLM_PROXY;
+// Resolution order, highest first: LLM_PROXY constant, window.__CBSR_LLM_PROXY__, a URL the user
+// previously applied in the UI (persisted), else "".
+const PROXY_STORE_KEY = "cbsr.llm_proxy";
+// The Worker matches the secret path segment EXACTLY, so a trailing slash turns a working proxy
+// into a 404. Normalise it here once rather than blaming the user's typing.
+function normalizeProxyUrl(s) { return (s || "").trim().replace(/\/+$/, ""); }
+let AI_PROXY = normalizeProxyUrl(LLM_PROXY);
 try {
   if (typeof window !== "undefined" && typeof window.__CBSR_LLM_PROXY__ === "string" && window.__CBSR_LLM_PROXY__) {
-    AI_PROXY = window.__CBSR_LLM_PROXY__;
+    AI_PROXY = normalizeProxyUrl(window.__CBSR_LLM_PROXY__);
   }
 } catch (e) { /* sandboxed access can throw; keep compile-time default */ }
-function setAiProxy(url) { AI_PROXY = (url || "").trim(); }
+// Persisted override: survives a reload so a self-hoster pastes the proxy once, not every session.
+// Guarded because sandboxed iframes can block storage entirely — a throw here must not break boot.
+try {
+  if (!AI_PROXY && typeof window !== "undefined" && window.localStorage) {
+    const saved = window.localStorage.getItem(PROXY_STORE_KEY);
+    if (saved) AI_PROXY = normalizeProxyUrl(saved);
+  }
+} catch (e) { /* storage unavailable; session-only proxy still works */ }
+function setAiProxy(url, persist) {
+  AI_PROXY = normalizeProxyUrl(url);
+  if (persist) {
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        if (AI_PROXY) window.localStorage.setItem(PROXY_STORE_KEY, AI_PROXY);
+        else window.localStorage.removeItem(PROXY_STORE_KEY);
+      }
+    } catch (e) { /* storage unavailable; the session value above still applies */ }
+  }
+}
 function currentAiProxy() { return AI_PROXY; }
 // A permissive sanity check for the config field: http(s) URL, nothing fancy.
 function looksLikeProxyUrl(s) { return /^https?:\/\/[^\s]+$/i.test((s || "").trim()); }
@@ -215,6 +244,10 @@ const T = {
     framingProg: (d, tot) => `正在生成问题… ${d} / ${tot} 组完成(条款与出处已就绪,可先看)`,
     errLimit: "AI 调用被限流(429):这轮跑得太频繁了。等一两分钟再点「映射」。这是 Claude 网页内 AI 调用的额度限制,我无法解除,只能减少调用、加退避。",
     errOverload: "AI 服务暂时过载(529)。稍等片刻再点「映射」。",
+    errNoProxy: "未配置模型代理，AI 功能无法调用。这不是你的网络问题：本页在浏览器里直接向 api.anthropic.com 发请求，会在 CORS 预检阶段就被拒绝，且请求不带任何密钥。修法：按 README「Tier 2」部署一个带密钥的代理，然后在下方输入框粘贴代理地址（含 secret 路径段），或写入 index.html 的 window.__CBSR_LLM_PROXY__ 后重新构建。确定性核心（维度地图 / 走廊 / 12×12 矩阵 / 时间轴 / 导出）不受影响。",
+    errProxyDown: "已配置代理，但请求发不出去。常见三种原因：① 代理地址写错或 Worker 未部署；② Worker 的 ALLOW_ORIGIN 没放行本站域名（浏览器会在 CORS 预检就拦下）；③ 代理域名解析或网络本身不通。可先在浏览器直接打开代理地址做健康检查。",
+    errAuth: "代理拒绝了请求（401 / 403）：说明请求到达了代理，但密钥缺失或无效。检查 Worker 是否已执行 wrangler secret put ANTHROPIC_API_KEY，以及该密钥在你的 Anthropic 账号下是否仍然有效。",
+    errNotFound: "代理返回 404：请求到了服务器但没命中路由。最常见的是代理地址末尾多了一个斜杠（Worker 对 secret 路径段是精确匹配），其次是模型串不被账号支持（见 App.jsx 顶部 AI_MODEL）。本版已自动去除末尾斜杠，若仍报 404，请核对 secret 路径段与模型串。",
     errNetwork: "网络错误,检查连接后重试。",
     errEmpty: "AI 返回了空回复,请再点一次「映射」。",
     errParse: "拿到了回复但解析失败(本版已加引号修复 + 截断修复)。若仍失败,把下面这段贴给我:",
@@ -232,6 +265,9 @@ const T = {
     qReg: "审查者会问 / 该核查的点", qProj: "带去问持牌律师的问题",
     qGen: "模型基于本条目生成 · 非结论", qGap: "无核验记录 · 仅指向该维度",
     qGenerating: "生成中…", qPendGen: "问题未能生成,可重试。上方条目与出处仍有效。",
+    frameFailH: (n) => `问题生成失败：${n} 个条目还没有问题`,
+    frameFailKeep: "已核验记录、条款出处、可引用标记与全部导出都不依赖模型，上方内容依然有效、可直接使用。",
+    frameFailRetry: "只重试缺失的问题",
     noRec: "覆盖空白 / no verified record",
     gapBody: (j) => `register 暂无 ${j} 此维度的已核验记录。该维度与你的业务相关,你仍需自行查证;工具不会凭空补一条规则。`,
     gapQ: (j, dim) => [`${j} 在「${dim}」上有哪些现行监管要求?`, `${j} 哪个机关对此有管辖权,适用哪部法规?`, `这个维度是否有适用于本业务的特定规则或豁免?`],
@@ -250,13 +286,13 @@ const T = {
     manualB: "路由步骤需要模型；若不可用，可自行勾选下列业务特征，工具仍会用确定性规则给出维度地图、对应记录与可引用子集（此路径不调用模型）。问题生成仍需模型。",
     manualBtn: "用这些特征生成地图",
     aiOffH: "AI 辅助功能未启用",
-    aiOffB: "文档 / 网址导入和「自动映射」需要一个已认证的模型代理。在 Anthropic 沙盒里代理是自动注入的；自托管时请按 DEPLOYMENT.md 配置你自己的代理并填入 LLM_PROXY。在此期间，下方的手动特征兜底可用，其余全部功能：维度地图、走廊、12×12 矩阵、时间轴、导出：均为确定性，无需模型即可正常使用。",
+    aiOffB: "文档 / 网址导入、「自动映射」和问题生成需要一个已认证的模型代理。在 Anthropic 沙盒里代理是自动注入的；自托管时请按 README「Tier 2」部署 worker/ 里的 Cloudflare Worker，拿到形如 https://你的worker.workers.dev/你的PROXY_SECRET 的地址填到下面。在此期间，下方的手动特征兜底可用，其余全部功能：维度地图、走廊、12×12 矩阵、时间轴、导出：均为确定性，无需模型即可正常使用。",
     aiOffManual: "跳到手动映射",
     aiOffTag: "确定性核心不受影响",
     proxyLabel: "或者：填入你的模型代理地址以恢复 AI 功能",
-    proxyPh: "https://你的代理域名/v1/messages",
+    proxyPh: "https://你的worker.workers.dev/你的PROXY_SECRET",
     proxyApply: "应用",
-    proxyHint: "会话内生效；填入后可重试导入或「自动映射」。持久化配置见 DEPLOYMENT.md（LLM_PROXY 或 window.__CBSR_LLM_PROXY__）。",
+    proxyHint: "填入后立即生效，并保存在本浏览器中，刷新后无需重填（清空输入框再点「应用」即可清除）。末尾的斜杠会被自动去掉——Worker 对 secret 路径段是精确匹配，多一个斜杠会返回 404。要对所有访问者生效，请改 index.html 里的 window.__CBSR_LLM_PROXY__ 后重新构建。",
     proxyOn: "代理已设为",
     proxyRetry: "现在可重试上方的 AI 功能。",
     proxyBad: "请填入以 http:// 或 https:// 开头的有效地址。",
@@ -317,6 +353,10 @@ const T = {
     framingProg: (d, tot) => `Generating questions… ${d} / ${tot} batches done (provisions & sources are ready below)`,
     errLimit: "AI calls are rate-limited (429): too many runs this session. Wait a minute or two, then click Map again. This is a limit on in-page AI calls that I can't lift: I can only reduce calls and back off.",
     errOverload: "The AI service is temporarily overloaded (529). Wait a moment and click Map again.",
+    errNoProxy: "No model proxy is configured, so the AI features cannot run. This is not your connection: the page is POSTing straight to api.anthropic.com from the browser, which is refused at the CORS preflight and carries no key. Fix: deploy the proxy per README Tier 2, then paste its URL (including the secret path segment) in the field below, or set window.__CBSR_LLM_PROXY__ in index.html and rebuild. The deterministic core (dimension map, corridors, the 12×12 matrix, the timeline, exports) is unaffected.",
+    errProxyDown: "A proxy is configured but the request never left the browser. Three usual causes: (1) the URL is wrong or the Worker is not deployed; (2) the Worker's ALLOW_ORIGIN does not permit this site's origin, so the CORS preflight is blocked; (3) the proxy host does not resolve. Open the proxy URL directly in a browser for a health check.",
+    errAuth: "The proxy rejected the request (401 / 403): it was reached, but the key is missing or invalid. Check that the Worker has had `wrangler secret put ANTHROPIC_API_KEY` run against it, and that the key is still valid on your Anthropic account.",
+    errNotFound: "The proxy returned 404: the server was reached but no route matched. Most often the proxy URL has a trailing slash (the Worker matches the secret path segment exactly); next most often the model string is not served to your account (see AI_MODEL at the top of App.jsx). This build strips trailing slashes automatically, so if 404 persists, verify the secret path segment and the model string.",
     errNetwork: "Network error. Check your connection and retry.",
     errEmpty: "The AI returned an empty reply. Click Map again.",
     errParse: "Got a reply but couldn't parse it (this version adds inner-quote repair + truncation repair). If it still fails, paste me the text below:",
@@ -334,6 +374,9 @@ const T = {
     qReg: "What a reviewer asks / points to scrutinise", qProj: "Questions to confirm with a licensed lawyer",
     qGen: "model-generated from this entry · not a conclusion", qGap: "no verified record · points to the dimension only",
     qGenerating: "generating…", qPendGen: "Questions couldn't be generated: retry. The entry and source above are still valid.",
+    frameFailH: (n) => `Question generation failed: ${n} entr${n === 1 ? "y has" : "ies have"} no questions yet`,
+    frameFailKeep: "The verified records, pinpoints, citable flags, and every export are model-free, so everything above remains valid and usable as it stands.",
+    frameFailRetry: "Retry only the missing questions",
     noRec: "coverage gap / no verified record",
     gapBody: (j) => `The register has no verified record for ${j} on this dimension yet. It is relevant to your business and you still need to check it: the tool will not invent a rule.`,
     gapQ: (j, dim) => [`What are ${j}'s current requirements on ${dim} for this business?`, `Which authority in ${j} has jurisdiction here, and under what instrument?`, `Are there rules or carve-outs on this dimension specific to this business?`],
@@ -352,13 +395,13 @@ const T = {
     manualB: "The routing step needs the model; if it is unavailable, tick the business features below and the tool still produces the dimension map, the matching records, and the citable subset by deterministic rule (this path calls no model). Question generation still needs the model.",
     manualBtn: "Map from these features",
     aiOffH: "AI-assisted features are off",
-    aiOffB: "Document / URL import and auto-map need an authenticated model proxy. In the Anthropic sandbox that proxy is injected automatically; to self-host, configure your own proxy per DEPLOYMENT.md and set LLM_PROXY. In the meantime the manual-feature fallback below works, and everything else: the dimension map, corridors, the 12×12 matrix, time-travel, and exports: is deterministic and runs with no model.",
+    aiOffB: "Document / URL import, auto-map, and question generation need an authenticated model proxy. In the Anthropic sandbox that proxy is injected automatically; to self-host, deploy the Cloudflare Worker in worker/ per README Tier 2 and paste the resulting https://your-worker.workers.dev/YOUR_PROXY_SECRET below. In the meantime the manual-feature fallback below works, and everything else: the dimension map, corridors, the 12×12 matrix, time-travel, and exports: is deterministic and runs with no model.",
     aiOffManual: "Jump to manual mapping",
     aiOffTag: "Deterministic core unaffected",
     proxyLabel: "Or: paste your model-proxy URL to restore AI features",
-    proxyPh: "https://your-proxy-domain/v1/messages",
+    proxyPh: "https://your-worker.workers.dev/YOUR_PROXY_SECRET",
     proxyApply: "Apply",
-    proxyHint: "Applies for this session; once set, retry import or auto-map. For a durable config see DEPLOYMENT.md (LLM_PROXY or window.__CBSR_LLM_PROXY__).",
+    proxyHint: "Applies immediately and is remembered in this browser, so a reload does not lose it (clear the field and Apply to forget it). A trailing slash is stripped automatically — the Worker matches the secret path segment exactly, and one extra slash returns 404. To set it for every visitor, edit window.__CBSR_LLM_PROXY__ in index.html and rebuild.",
     proxyOn: "Proxy set to",
     proxyRetry: "you can retry the AI features above now.",
     proxyBad: "Enter a valid URL starting with http:// or https://.",
@@ -401,14 +444,22 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // REGISTER_API (top of file) affects ONLY the static data sync, not these calls. When the
 // router call fails, the app now offers a no-AI manual-feature fallback so the deterministic
 // core (dimension map + records + citable subset) still works.
+// The single most common self-hosting failure is NO PROXY AT ALL: the bare cross-origin POST is
+// refused at the CORS preflight, fetch rejects, and the old code reported that as a generic
+// "network error" — which sends the user to check their wifi instead of their config. We now
+// distinguish the two cases by whether a proxy was actually configured, so the message can name
+// the real cause.
 async function callClaude(content, opts = {}) {
+  const proxy = currentAiProxy();
   let res;
   try {
-    res = await fetch(currentAiProxy() || "https://api.anthropic.com/v1/messages", {
+    res = await fetch(proxy || "https://api.anthropic.com/v1/messages", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: opts.max_tokens || 1000, messages: [{ role: "user", content }], ...opts }),
+      body: JSON.stringify({ model: AI_MODEL, max_tokens: opts.max_tokens || 1000, messages: [{ role: "user", content }], ...opts }),
     });
-  } catch (e) { throw new Error("NETWORK: " + (e.message || "fetch failed")); }
+  } catch (e) {
+    throw new Error((proxy ? "PROXYDOWN: " : "NOPROXY: ") + (e.message || "fetch failed"));
+  }
   if (!res.ok) {
     let body = "";
     try { body = (await res.text()).slice(0, 200); } catch (e) { /* ignore */ }
@@ -592,6 +643,10 @@ async function callWithRetry(promptFn, callOpts = {}) {
 function classifyErr(t, err) {
   if (/HTTP 429/.test(err)) return t.errLimit;
   if (/HTTP 529|overload/i.test(err)) return t.errOverload;
+  if (/^NOPROXY/.test(err)) return t.errNoProxy;
+  if (/^PROXYDOWN/.test(err)) return t.errProxyDown;
+  if (/HTTP 401|HTTP 403/.test(err)) return t.errAuth;
+  if (/HTTP 404/.test(err)) return t.errNotFound;
   if (/^NETWORK/.test(err)) return t.errNetwork;
   if (/^EMPTY/.test(err)) return t.errEmpty;
   if (/^PARSE/.test(err)) return t.errParse;
@@ -605,7 +660,7 @@ function classifyErr(t, err) {
 // they must NOT trip the degraded state.
 function aiEnvDown(err) {
   const s = String(err || "");
-  return /HTTP 401|HTTP 403/.test(s) || /^NETWORK/.test(s);
+  return /HTTP 401|HTTP 403/.test(s) || /^NETWORK/.test(s) || /^NOPROXY/.test(s) || /^PROXYDOWN/.test(s);
 }
 
 function Chip({ children, tone }) {
@@ -918,6 +973,9 @@ const TX = {
     ttH: "时间轴：compose(as_of)",
     ttHint: "把日期拖到某个已排定的生效日之后,走廊类别按 register 的时间引擎重算。已排定/已公布的翻转会自动生效;或有（无公布日）的触发不自动生效,单独标注。",
     ttAsOf: "截至日期", ttToday: "今日", ttReset: "回到今日",
+    ttTodayMark: "今日（真实日期）", ttSnapMark: "数据快照基线",
+    ttInForce: "已生效", ttUpcoming: "未到",
+    ttDateNote: (today, snap, days) => `今日 ${today} · 数据快照截至 ${snap}（已 ${days} 天）。两者是两件事：已排定的生效日到期后走廊类别会自行翻转（这些日期是已公布的事实），而条文内容仍停留在快照日。拖到「数据快照基线」可看当日所见的状态。`,
     ttHorizons: "关键节点", ttScheduled: "已排定", ttContingent: "或有(无日期)",
     ttDist: "全网类别分布", ttChanged: (n) => `${n} 条边相对今日已翻类`, ttNoChange: "相对今日无翻转",
     ttGeniusCap: "美国 GENIUS §18 外限", ttUkGazette: "英国制度生效(公布)",
@@ -1055,6 +1113,9 @@ const TX = {
     ttH: "Timeline: compose(as_of)",
     ttHint: "Drag the date past a scheduled commencement and corridor classes recompute from the register's time engine. Scheduled / gazetted flips apply automatically; contingent (undated) triggers do not, and are noted separately.",
     ttAsOf: "As of", ttToday: "today", ttReset: "Back to today",
+    ttTodayMark: "today (real date)", ttSnapMark: "data snapshot baseline",
+    ttInForce: "in force", ttUpcoming: "not yet",
+    ttDateNote: (today, snap, days) => `Today is ${today}; the data snapshot is as of ${snap} (${days} days old). These are two different things: scheduled commencements flip corridor classes on their own once their date arrives (those dates are published facts), while the provisions themselves still reflect the snapshot day. Drag to "data snapshot baseline" to see what the register saw that day.`,
     ttHorizons: "Key horizons", ttScheduled: "scheduled", ttContingent: "contingent (no date)",
     ttDist: "Full-network class distribution", ttChanged: (n) => `${n} edges reclassified vs today`, ttNoChange: "no flips vs today",
     ttGeniusCap: "US GENIUS §18 outer cap", ttUkGazette: "UK regime operative (gazetted)",
@@ -1160,15 +1221,35 @@ function countCorrPairs(jurs) {
 // UK SI 2026/102 gazetted 2027-10-25). CONTINGENT transitions (entry.w[], no date) are
 // NOT auto-applied — they are reported separately, matching the register's own
 // scheduled-vs-contingent discipline. Verified edge-for-edge against COMPUTE at build.
-const SNAPSHOT_DATE = (DATA.meta && DATA.meta.as_of) || "2026-06-30";
+//
+// TWO DATES, DELIBERATELY DISTINCT — this is the fix for "the timeline is stuck on 2026-06-30":
+//   snapshotDate()  the day the DATA below was verified. Frozen by design; it is what the
+//                   citation discipline rests on, and it must never silently become "today".
+//   todayISO()      the real wall clock. The dated commencements baked into COMPUTE (US GENIUS
+//                   §18 outer cap 2027-01-18, UK SI 2026/102 gazetted 2027-10-25) are KNOWN
+//                   facts, so once a real day passes one of them, the corridor classes should
+//                   move on their own. Previously asOf==null skipped every dated transition, so
+//                   the tool would still have shown the pre-flip world on 2027-10-26.
+// snapshotDate() is a function, not a const: the live-register sync mutates DATA.meta.as_of after
+// mount, and a module-level const captured at load time could never see it.
+function snapshotDate() { return (DATA.meta && DATA.meta.as_of) || "2026-06-30"; }
+function todayISO() {
+  try {
+    const d = new Date();
+    // local calendar day, not UTC — a user in HK/CN should not see yesterday's date all morning
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  } catch (e) { return snapshotDate(); }
+}
+// asOf === null means "now" and now resolves to the real calendar day.
 function composeCorridorClasses(asOf) {
+  const at = asOf || todayISO();
   const out = {};
   const C = COMPUTE.corridors;
   for (const pk of Object.keys(C)) {
     const entry = C[pk];
     for (const ek of Object.keys(entry.d)) out[ek] = entry.d[ek].c;
-    if (asOf && Array.isArray(entry.t)) {
-      for (const tr of entry.t) if (tr.dt <= asOf && out[tr.e] === tr.f) out[tr.e] = tr.to;
+    if (Array.isArray(entry.t)) {
+      for (const tr of entry.t) if (tr.dt <= at && out[tr.e] === tr.f) out[tr.e] = tr.to;
     }
   }
   return out;
@@ -1602,8 +1683,25 @@ function ExportBar({ t, ui, asOf, kinds }) {
 // recomputes the whole corridor layer at that date, and reports how many edges moved.
 function TimeTravel({ t, ui, asOf, setAsOf }) {
   const horizons = datedHorizons();                 // ascending dated flips
-  const stops = ["today", ...horizons.map((h) => h.dt)];
-  const idx = asOf == null ? 0 : Math.max(0, stops.indexOf(asOf));
+  const realToday = todayISO();
+  const snap = snapshotDate();
+  // Stops are built from real dates and sorted, so a commencement that has ALREADY arrived sits to
+  // the LEFT of "today" and is marked as in force. The snapshot day stays reachable as an explicit
+  // baseline whenever it is not today — that is how you see what the data actually saw.
+  const marks = [];
+  const push = (dt, kind, label) => {
+    const at = marks.findIndex((m) => m.dt === dt);
+    if (at >= 0) { if (kind === "today") marks[at] = { dt, kind, label }; return; }
+    marks.push({ dt, kind, label });
+  };
+  if (snap !== realToday) push(snap, "snapshot", t.ttSnapMark);
+  for (const h of horizons) push(h.dt, "horizon", h.dt === "2027-01-18" ? t.ttGeniusCap : h.dt === "2027-10-25" ? t.ttUkGazette : (h.kind || ""));
+  push(realToday, "today", t.ttTodayMark);
+  marks.sort((a, b) => (a.dt < b.dt ? -1 : a.dt > b.dt ? 1 : 0));
+  const todayIdx = Math.max(0, marks.findIndex((m) => m.kind === "today"));
+  const sel = asOf == null ? realToday : asOf;
+  const foundIdx = marks.findIndex((m) => m.dt === sel);
+  const idx = foundIdx >= 0 ? foundIdx : todayIdx;
   const today = composeCorridorClasses(null);
   const now = composeCorridorClasses(asOf);
   let changed = 0;
@@ -1611,34 +1709,31 @@ function TimeTravel({ t, ui, asOf, setAsOf }) {
   const dist = classDist(now);
   const order = ["I", "II", "III", "T", "blocked", "pre_regime"];
   const total = Object.values(dist).reduce((a, b) => a + b, 0) || 1;
-  const label = (dt) => {
-    if (dt === "today") return t.ttToday;
-    const h = horizons.find((x) => x.dt === dt);
-    if (!h) return dt;
-    if (dt === "2027-01-18") return t.ttGeniusCap;
-    if (dt === "2027-10-25") return t.ttUkGazette;
-    return dt;
-  };
   const pending = contingentTriggers();
+  const pick = (m) => setAsOf(m.kind === "today" ? null : m.dt);
+  const rawAge = snapshotAge(snap);
+  const ageDays = rawAge == null ? 0 : rawAge;
   return (
     <div className="tt">
       <div className="tt-h">{t.ttH}</div>
       <div className="tt-hint">{t.ttHint}</div>
       <div className="tt-row">
         <span className="tt-asof-k">{t.ttAsOf}</span>
-        <span className="tt-asof-v">{asOf == null ? `${t.ttToday} · ${SNAPSHOT_DATE}` : asOf}</span>
+        <span className="tt-asof-v">{asOf == null ? `${t.ttToday} · ${realToday}` : asOf}</span>
         {asOf != null && <button className="tt-reset" onClick={() => setAsOf(null)}>{t.ttReset}</button>}
       </div>
+      <div className="tt-dates">{t.ttDateNote(realToday, snap, ageDays)}</div>
       <input
-        className="tt-slider" type="range" min={0} max={stops.length - 1} step={1} value={idx}
-        onChange={(e) => { const i = +e.target.value; setAsOf(i === 0 ? null : stops[i]); }}
+        className="tt-slider" type="range" min={0} max={marks.length - 1} step={1} value={idx}
+        onChange={(e) => pick(marks[+e.target.value])}
         aria-label={t.ttAsOf}
       />
       <div className="tt-ticks">
-        {stops.map((dt, i) => (
-          <button key={dt} className={"tt-tick" + (i === idx ? " on" : "")} onClick={() => setAsOf(i === 0 ? null : dt)}>
-            <span className="tt-tick-dt">{dt === "today" ? t.ttToday : dt}</span>
-            <span className="tt-tick-lbl">{i === 0 ? t.mxTodayTag : label(dt)}</span>
+        {marks.map((m, i) => (
+          <button key={m.dt} className={"tt-tick" + (i === idx ? " on" : "") + (m.kind === "today" ? " tt-tick-today" : "") + (m.kind === "horizon" && m.dt <= realToday ? " tt-tick-past" : "")} onClick={() => pick(m)}>
+            <span className="tt-tick-dt">{m.dt}</span>
+            <span className="tt-tick-lbl">{m.label || m.dt}</span>
+            {m.kind === "horizon" && <span className="tt-tick-state">{m.dt <= realToday ? t.ttInForce : t.ttUpcoming}</span>}
           </button>
         ))}
       </div>
@@ -2155,7 +2250,7 @@ function SnapshotBanner({ t, ui, sync }) {
       <div className="snapbar-top">
         <span className={"snapbar-tag" + (live ? " snapbar-tag-live" : "")}>{live ? t.snapLive : t.snapFrozen}</span>
         <span className="snapbar-meta">
-          {live ? <>v{sync.version} · {sync.n} {t.refreshed}</> : t.snapAge(DATA.meta.as_of, age)}
+          {live ? <>v{sync.version} · {sync.n} {t.refreshed} · {t.snapAge(sync.as_of || DATA.meta.as_of, age)}</> : t.snapAge(DATA.meta.as_of, age)}
           {" · "}{DATA.meta.record_count} records · {DATA.meta.citable_count} {t.citableWord}
         </span>
       </div>
@@ -2696,7 +2791,13 @@ export default function App() {
         }
         DATA.meta.citable_count = DATA.records.filter((r) => r.citable).length;
         if (meta && meta.version) DATA.meta.version = meta.version;
-        if (!cancelled) setSync({ ok: true, n: n, version: (meta && meta.version) || DATA.meta.version });
+        // The sync previously refreshed the evidence axes but NOT the snapshot date, so a
+        // live-synced deploy still displayed the compile-time as_of and the timeline never moved.
+        // snapshotDate() reads DATA.meta at call time, so setting it here does propagate on the
+        // re-render that setSync triggers.
+        if (meta && meta.as_of) DATA.meta.as_of = meta.as_of;
+        if (meta && meta.record_count) DATA.meta.record_count = meta.record_count;
+        if (!cancelled) setSync({ ok: true, n: n, version: (meta && meta.version) || DATA.meta.version, as_of: DATA.meta.as_of });
       } catch (e) {
         if (!cancelled) setSync({ ok: false, msg: String((e && e.message) || e) });
       }
@@ -2709,6 +2810,9 @@ export default function App() {
   const [framed, setFramed] = useState({});
   const [framedHidden, setFramedHidden] = useState({});
   const [framing, setFraming] = useState(null); // {done,total} while generating questions
+  const [frameErr, setFrameErr] = useState(""); // classified reason the question leg failed
+  const [frameMissing, setFrameMissing] = useState([]); // entries that still have no questions
+  const frameCtx = useRef(null);                // inputs kept so a retry need not re-run the map
   const [showBaseline, setShowBaseline] = useState(false);
   useEffect(() => { setShowBaseline(audience !== "regulator"); }, [audience]); // baseline collapsed by default -> hard focus on pressure points
   const [error, setError] = useState("");
@@ -2800,30 +2904,77 @@ export default function App() {
     const groundById = {};
     for (const rec of DATA.records) if (coveredIds.has(rec.id)) groundById[rec.id] = [rec.requirement_summary, rec.tension, rec.pinpoint, rec.source_primary].filter(Boolean).join(" ");
 
+    // Keep everything the framer needs so a later retry does not have to re-run the whole map.
+    frameCtx.current = { covered, groundById, L, audience };
+    await runFraming(covered, groundById, L, audience);
+    setStage("done");
+  };
+
+  // Question generation, extracted so it can be re-run on its own. The old version swallowed every
+  // framer error: a failed batch just pushed its entries into `missed`, the retry pass failed the
+  // same way, and the user was left with "questions couldn't be generated" and no cause — even
+  // though the cause was invariably the same missing proxy that produced the banner above. Now the
+  // last error is classified, shown, and allowed to trip the degraded-mode state.
+  const runFraming = async (covered, groundById, L, aud, only) => {
     const SIZE = 4;
     const FRAME_OPTS = { max_tokens: 2000 };
+    const work = Array.isArray(only) && only.length ? only : covered;
+    setFrameErr("");
     const batches = [];
-    for (let i = 0; i < covered.length; i += SIZE) batches.push(covered.slice(i, i + SIZE));
+    for (let i = 0; i < work.length; i += SIZE) batches.push(work.slice(i, i + SIZE));
     setFraming({ done: 0, total: batches.length });
     const missed = [];
+    let lastErr = "";
+    let stopped = -1;
     for (let bi = 0; bi < batches.length; bi++) {
-      const fr = await callWithRetry((strict) => framerPrompt(audience, batches[bi], L, strict), FRAME_OPTS);
+      const fr = await callWithRetry((strict) => framerPrompt(aud, batches[bi], L, strict), FRAME_OPTS);
       if (fr.ok) {
         const { kept, dropped } = sanitizeFramed(fr.value, groundById);
         setFramed((prev) => ({ ...prev, ...kept }));
         setFramedHidden((prev) => ({ ...prev, ...dropped }));
         for (const e of batches[bi]) if (!Array.isArray(kept[e.key]) || kept[e.key].length === 0) missed.push(e);
       } else {
+        lastErr = fr.error || lastErr;
         for (const e of batches[bi]) missed.push(e);
       }
       setFraming({ done: bi + 1, total: batches.length });
+      // An environment failure will not fix itself on the next batch: stop burning attempts.
+      if (aiEnvDown(lastErr)) { stopped = bi; break; }
     }
-    for (const e of missed) {
-      const fr = await callWithRetry((strict) => framerPrompt(audience, [e], L, strict), FRAME_OPTS);
-      if (fr.ok) { const { kept, dropped } = sanitizeFramed(fr.value, groundById); if (Array.isArray(kept[e.key]) && kept[e.key].length) setFramed((prev) => ({ ...prev, [e.key]: kept[e.key] })); if (dropped[e.key]) setFramedHidden((prev) => ({ ...prev, [e.key]: dropped[e.key] })); }
+    // Batches we never reached still have no questions — count them, or the failure panel
+    // would under-report how much is actually missing.
+    if (stopped >= 0) for (let bi = stopped + 1; bi < batches.length; bi++) missed.push(...batches[bi]);
+    const stillMissing = [];
+    if (!aiEnvDown(lastErr)) {
+      for (const e of missed) {
+        const fr = await callWithRetry((strict) => framerPrompt(aud, [e], L, strict), FRAME_OPTS);
+        if (fr.ok) {
+          const { kept, dropped } = sanitizeFramed(fr.value, groundById);
+          if (Array.isArray(kept[e.key]) && kept[e.key].length) setFramed((prev) => ({ ...prev, [e.key]: kept[e.key] }));
+          else stillMissing.push(e);
+          if (dropped[e.key]) setFramedHidden((prev) => ({ ...prev, [e.key]: dropped[e.key] }));
+        } else { lastErr = fr.error || lastErr; stillMissing.push(e); }
+      }
+    } else {
+      stillMissing.push(...missed);
     }
     setFraming(null);
-    setStage("done");
+    setFrameMissing(stillMissing);
+    // Store the RAW error code, not the rendered sentence: classifying at render time means the
+    // message follows the UI-language toggle instead of freezing in whatever locale was active.
+    if (stillMissing.length && lastErr) {
+      setFrameErr(lastErr);
+      if (aiEnvDown(lastErr)) setAiRuntimeDown(true);
+    }
+  };
+
+  // Retry only the entries that still have no questions — records and sources are already on screen
+  // and must not be thrown away just because the model leg failed.
+  const retryFraming = async () => {
+    const ctx = frameCtx.current;
+    if (!ctx) return;
+    const missing = (ctx.covered || []).filter((e) => !Array.isArray(framed[e.key]) || framed[e.key].length === 0);
+    await runFraming(ctx.covered, ctx.groundById, ctx.L, ctx.audience, missing.length ? missing : null);
   };
 
   async function handleMap() {
@@ -2853,12 +3004,14 @@ export default function App() {
   // at it, clear the runtime-down flag (so aiOff flips back and the normal run button returns), and
   // echo the endpoint. An empty value clears any override and reverts to the bare endpoint.
   function applyProxy() {
-    const url = (proxyInput || "").trim();
+    const url = normalizeProxyUrl(proxyInput);
     if (url && !looksLikeProxyUrl(url)) { setError(t.proxyBad); return; }
-    setAiProxy(url);
+    setAiProxy(url, true);            // persist: paste it once, not once per session
+    setProxyInput(url);               // echo the normalised form so the user sees the slash go
     setProxyApplied(url);
     setAiRuntimeDown(false);
     setError(""); setErrRaw("");
+    setFrameErr("");                  // a stale failure banner must not outlive its cause
   }
 
   const preBusy = stage === "routing" || stage === "retrieving";
@@ -3048,6 +3201,15 @@ export default function App() {
             <div className="framebar">
               <div className="framebar-text"><span className="spin" />{t.framingProg(framing.done, framing.total)}</div>
               <div className="framebar-track"><div className="framebar-fill" style={{ width: (framing.total ? (framing.done / framing.total * 100) : 0) + "%" }} /></div>
+            </div>
+          )}
+
+          {!framingActive && frameErr && frameMissing.length > 0 && (
+            <div className="framefail">
+              <div className="framefail-h">{t.frameFailH(frameMissing.length)}</div>
+              <div className="framefail-b">{classifyErr(t, frameErr)}</div>
+              <div className="framefail-keep">{t.frameFailKeep}</div>
+              <button className="framefail-btn" onClick={retryFraming}>{t.frameFailRetry}</button>
             </div>
           )}
 
@@ -3734,6 +3896,16 @@ const CSS = `@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono
 .tt-tick-lbl{ font-size:9.5px; line-height:1.25; color:var(--gap); text-align:center; }
 .tt-tick.on .tt-tick-dt{ color:var(--ink); font-weight:700; }
 .tt-tick.on .tt-tick-lbl{ color:var(--accent); }
+.tt-dates{ font-size:11.5px; line-height:1.6; color:var(--slate); background:#FBFBF9; border:1px solid var(--rule); border-radius:5px; padding:8px 11px; margin-bottom:4px; max-width:760px; }
+.tt-tick-today .tt-tick-dt{ color:var(--verify); font-weight:700; }
+.tt-tick-state{ font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace; font-size:8.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--gap); border:1px solid var(--rule); border-radius:3px; padding:0 4px; }
+.tt-tick-past .tt-tick-state{ color:var(--verify); border-color:var(--c-trans-bd); }
+.framefail{ border:1px solid var(--c-block); border-left:3px solid var(--c-block); border-radius:6px; background:#FDF6F5; padding:13px 15px; margin:14px 0; }
+.framefail-h{ font-family:'IBM Plex Sans',-apple-system,system-ui,"Segoe UI",Roboto,sans-serif; font-size:13.5px; font-weight:600; color:var(--ink); margin-bottom:6px; }
+.framefail-b{ font-size:12px; line-height:1.65; color:var(--slate); margin-bottom:7px; }
+.framefail-keep{ font-size:11.5px; line-height:1.6; color:var(--verify); margin-bottom:10px; }
+.framefail-btn{ font-family:inherit; font-size:12px; font-weight:600; padding:6px 14px; border:1px solid var(--ink); border-radius:4px; background:#FBFBF9; color:var(--ink); cursor:pointer; }
+.framefail-btn:hover{ background:var(--ink); color:#FBFBF9; }
 .tt-dist{ border-top:1px solid var(--rule); padding-top:12px; }
 .tt-dist-h{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace; font-size:10px; letter-spacing:.05em; text-transform:uppercase; color:var(--slate); margin-bottom:8px; }
 .tt-dist-changed{ margin-left:auto; text-transform:none; letter-spacing:0; font-size:11px; font-weight:600; color:var(--accent); }

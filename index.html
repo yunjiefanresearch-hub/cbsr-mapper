@@ -36,18 +36,35 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
 
-    <!-- OPTIONAL: turn on the AI features (document / URL import, auto-map, question
-         generation) by pointing at your deployed proxy. Uncomment and paste the full
-         URL, INCLUDING the secret path segment (see worker/ and README, Tier 2).
-         Without this, the deterministic core still works with no model. -->
+    <!-- ================= AI FEATURES: ONE LINE TO TURN THEM ON =================
+         Document / URL import, auto-map, and question generation all POST to the
+         Anthropic Messages API. On a static host those calls carry no credentials, so
+         they MUST go through your own authenticated proxy. Until this line is live, the
+         app degrades cleanly: it shows a named diagnosis (not "network error"), offers
+         the manual-feature fallback, and the whole deterministic core — dimension map,
+         corridors, the 12x12 matrix, the timeline, every export — keeps working.
+
+         To enable: deploy worker/ (README, Tier 2), then UNCOMMENT the line below and
+         paste the full URL INCLUDING the secret path segment. No trailing slash — the
+         Worker matches that segment exactly (the app now strips one for you anyway).
+         Verify first by opening the same URL in a browser tab: the Worker answers a GET
+         with a JSON health check, so you can confirm the path and the key for free.
+
+         Prefer not to rebuild? Run the app and paste the URL into the field in the
+         yellow banner instead: it applies immediately and is remembered in that browser.
+         ========================================================================= -->
     <!-- <script>window.__CBSR_LLM_PROXY__ = "https://YOUR-WORKER.workers.dev/YOUR_PROXY_SECRET";</script> -->
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   <!-- Cookieless, aggregate analytics. No cookies, no personal data, no consent banner.
-       Replace YOUR_CF_TOKEN with the token from Cloudflare > Web Analytics > add a site. -->
-  <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
-          data-cf-beacon='{"token":"YOUR_CF_TOKEN"}'></script>
+       DISABLED BY DEFAULT ON PURPOSE: shipped with an unreplaced token, this beacon fires a
+       request that fails on every page load, filling the console with a network error that
+       has nothing to do with the app and that made the real AI-proxy failure much harder to
+       diagnose. To enable, paste your real token from Cloudflare > Web Analytics > add a
+       site, and uncomment the tag. -->
+  <!-- <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token":"PASTE_YOUR_CLOUDFLARE_TOKEN"}'></script> -->
   </body>
 </html>

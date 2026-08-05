@@ -106,7 +106,29 @@ for (const corr of DATA.corridors || []) {
 }
 pass("corridor evidence contract holds (no half-states, no citable-while-pending)");
 
-// ── 5. The built bundle must not carry a placeholder either ──────────────────
+// ── 5. index.html must not ship an ACTIVE placeholder tag ────────────────────
+// Same discipline as check 1, applied to the page shell. Both of these actually shipped:
+// an analytics beacon with an unreplaced token, firing a failed request on every page load
+// and burying the real diagnosis; and the proxy slot, where a half-pasted placeholder URL
+// would point every AI call at a host that does not exist. A commented-out template is fine
+// — that is the documented off state — so comments are stripped before scanning.
+const INDEX = path.join(ROOT, "index.html");
+if (fs.existsSync(INDEX)) {
+  const live = fs.readFileSync(INDEX, "utf8").replace(/<!--[\s\S]*?-->/g, "");
+  const shells = [
+    [/data-cf-beacon[^>]*PASTE_YOUR|data-cf-beacon[^>]*YOUR_CF_TOKEN/i, "analytics beacon with an unreplaced token"],
+    [/__CBSR_LLM_PROXY__\s*=\s*["'][^"']*(YOUR-WORKER|YOUR_PROXY_SECRET)/i, "AI proxy slot with a placeholder URL"],
+  ];
+  let shellBad = false;
+  for (const [re, what] of shells) {
+    if (re.test(live)) { fail(`index.html ships an active ${what}`); shellBad = true; }
+  }
+  if (!shellBad) pass("index.html carries no active placeholder tag");
+} else {
+  fail("index.html not found next to package.json");
+}
+
+// ── 6. The built bundle must not carry a placeholder either ──────────────────
 // Source can be clean while a stale build ships. Scan dist/ when it exists.
 if (process.argv.includes("--dist")) {
   if (!fs.existsSync(DIST)) {

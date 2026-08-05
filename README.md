@@ -75,15 +75,30 @@ that URL **plus the secret path**:
 https://cbsr-ai-proxy.<you>.workers.dev/<PROXY_SECRET>
 ```
 
+**Verify it before wiring it up.** Open that exact URL in a browser tab. The Worker answers a
+`GET` with a JSON health check and spends no tokens:
+
+```json
+{ "ok": true, "service": "cbsr-ai-proxy", "secret_path": "matched", "api_key_configured": true }
+```
+
+- JSON with `api_key_configured: true` → you are done; paste the same URL into the mapper.
+- JSON with `api_key_configured: false` → run `wrangler secret put ANTHROPIC_API_KEY`.
+- `503` naming `PROXY_SECRET` → run `wrangler secret put PROXY_SECRET`.
+- `not found` (404) → the path segment does not match your secret. Check for a typo, and note
+  that a trailing slash is now stripped by both the Worker and the app, so that is no longer it.
+
 Point the mapper at it — pick one:
 
-- **Durable (recommended):** in `index.html`, uncomment the line and paste the full URL:
+- **Durable, everyone (recommended):** in `index.html`, uncomment the line and paste the full URL:
   ```html
   <script>window.__CBSR_LLM_PROXY__ = "https://cbsr-ai-proxy.<you>.workers.dev/<PROXY_SECRET>";</script>
   ```
   then rebuild (`npm run build`) and redeploy.
-- **Per session:** run the app, and when the "AI unavailable" banner appears, paste the URL
-  into its proxy field. Good for testing before you commit it.
+- **Durable, just you, no rebuild:** run the app and paste the URL into the field in the
+  "AI features are off" banner. It applies immediately and is remembered in that browser
+  (clear the field and Apply to forget it). Good for testing before you commit it, and good
+  if you would rather not put the secret in a public repo at all.
 
 ### Security — read this before exposing the proxy
 An open proxy spends **your** Anthropic credits. This kit gives you three levers:
@@ -94,10 +109,65 @@ An open proxy spends **your** Anthropic credits. This kit gives you three levers
    site's origin to stop other web pages from calling it from a browser.
 3. **Rate limiting (recommended).** Add a Cloudflare Rate Limiting rule on the Worker route.
 
-Also note: the model string in the app is `claude-sonnet-4-6`, and some calls use the
-`web_search` tool — both must be available on your Anthropic account. If a call returns an
-error mentioning the tool, you may need to enable it (or add the relevant `anthropic-beta`
-header in `worker.js`). None of this affects the deterministic core.
+Also note: the model string lives in one place — `AI_MODEL` at the top of `src/App.jsx`
+(currently `claude-sonnet-4-6`) — and some calls use the `web_search` tool. Both must be
+available on your Anthropic account. Verify the model string your account actually serves at
+<https://docs.claude.com> before going live: a wrong string returns **HTTP 404**, not a network
+error, which is why the app now reports 404 separately. None of this affects the deterministic
+core.
+
+---
+
+## Troubleshooting — what each message actually means
+
+The app used to report every failed model call as "network error", which sent people to check
+their wifi when the real cause was configuration. Each failure mode is now named separately:
+
+| What you see | What it actually is | Fix |
+| --- | --- | --- |
+| **No model proxy is configured** | `LLM_PROXY` is `""`, `window.__CBSR_LLM_PROXY__` is still commented out, and nothing was pasted in the UI. The browser POSTs straight to `api.anthropic.com`, which is refused at the CORS preflight and carries no key. | Tier 2 above. Deploy the Worker, paste the URL. |
+| **A proxy is configured but the request never left the browser** | Wrong URL, Worker not deployed, `ALLOW_ORIGIN` does not include your site's origin, or DNS. | Open the proxy URL in a tab (health check). If that works but the app does not, it is `ALLOW_ORIGIN`. |
+| **The proxy rejected the request (401 / 403)** | The proxy was reached; the API key is missing or invalid. | `wrangler secret put ANTHROPIC_API_KEY` |
+| **The proxy returned 404** | Server reached, no route matched: usually a wrong secret path segment, sometimes a model string your account does not serve. | Check the secret segment and `AI_MODEL`. |
+| **429 / 529** | Rate limit / upstream overload. Transient. | Wait and retry; the app already backs off. |
+| **Question generation failed: N entries have no questions** | Same causes as above — question generation is a model call like any other. The reason is now shown inline with a **Retry only the missing questions** button. | Fix the proxy, then retry. Records, pinpoints, citable flags and every export are model-free and remain valid meanwhile. |
+
+Two things that used to muddy this picture and are now fixed:
+
+- `index.html` shipped a Cloudflare Web Analytics beacon with an unreplaced token, so **every**
+  page load logged a failed request in the console that had nothing to do with the app. The tag
+  is commented out by default; paste a real token to enable it.
+- A trailing slash on the proxy URL turned a correct configuration into a 404. Both the Worker
+  and the app now normalise it away.
+
+---
+
+## The two dates: snapshot vs today
+
+The register is a **dated** artifact, and the tool keeps two clocks apart on purpose:
+
+- **`DATA.meta.as_of`** — the day the provisions were verified. Frozen. It is what the citation
+  discipline rests on, and it never silently becomes "today". Shown as "data snapshot as of …".
+- **The real calendar day** — used by the time engine. The dated commencements baked into
+  `COMPUTE` (US GENIUS §18 outer cap `2027-01-18`, UK SI 2026/102 gazetted `2027-10-25`) are
+  *published facts*, so once a real day passes one of them the corridor classes recompute on
+  their own. Previously they did not: `composeCorridorClasses(null)` skipped every dated
+  transition, so on 2027-10-26 the tool would still have drawn the pre-commencement world.
+
+The timeline therefore shows both, and the slider carries a **data snapshot baseline** stop so
+you can always see the state the register itself saw. Contingent triggers with no gazetted date
+(`kr-daba-enacted`, `tw-vas-act-enacted`) still do **not** auto-apply — that is the register's
+scheduled-vs-contingent discipline and it is unchanged.
+
+If you want the provisions themselves to move too, that is Tier 3: `meta.json` from your
+register API now updates `as_of` and `record_count`, not just the version (it previously did
+not, which is why a live-synced deploy still displayed the compile-time snapshot date).
+
+### Two version numbers, deliberately different
+
+`package.json` versions the **deploy kit** (this build tooling and UI). `DATA.meta.version`
+versions the **register snapshot** and is citation-bearing — it appears in the BibTeX and
+CITATION.cff exports. Fixing a UI bug bumps the first and must not touch the second.
 
 ---
 
