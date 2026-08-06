@@ -1,5 +1,49 @@
 # 变更记录
 
+## 0.11.1 — 演示模式与离线构建（register 数据版本 0.10.1 未改动）
+
+`DATA` 与 `COMPUTE` 两个数据块**逐字节未动**。本次只加开关、不改结论。
+
+### 一、`DEMO_MODE`：去掉病因，而不是藏起病症
+
+0.11.0 把「未配置模型代理」的诊断做对了：黄色横幅、代理输入框、分门别类的错误文案。
+诊断正确，但在向外演示时，这些恰恰是最不该出现在屏幕上的东西——它们是给自托管者看的运维信息。
+
+`DEMO_MODE`（默认开启，`window.__CBSR_DEMO__ = false` 可关闭）不拦截失败的调用，而是**不发起**它：
+
+- **路由**改为确定性关键词规则，写入的是与手动勾选框完全相同的六个业务特征标志位。
+  下游的维度推导、分层、记录检索、可引用子集全部沿用原有确定性代码，一行未改。
+  复述文案里明确写明「由关键词规则确定性提取，不是模型推断」，手动勾选框保留为修正入口。
+- **问题生成**改为从每条记录自身的字段拼装（authority / pinpoint / source_primary /
+  tension / resolution_channel / binding_status），因此每一个问题都指向登记册确实持有的内容。
+  来源标签相应改为「由本条目的条款 / 张力字段确定性生成 · 非结论」。
+- 文档 / 网址导入区块、降级横幅、代理输入框、降级运行按钮均不再渲染；
+  `f1` 与 `empty` 两处文案不再提及已隐藏的导入路径。
+
+AI 代码路径一行未删，`AI_AVAILABLE` / `aiRuntimeDown` / `callClaude` / `runFraming` 全部原样保留。
+
+### 二、`npm run build:offline`：单文件、可离线、可双击
+
+新增 `scripts/build-offline.mjs`。用 TypeScript 转译 JSX，并把 `node_modules` 里的
+react / react-dom / scheduler / jsx-runtime 的 production CJS 构建打进一个**经典 script**，
+输出单个自包含 HTML。
+
+- 依赖全部经 `createRequire` 从项目位置解析，不含任何机器绝对路径；
+  React 18 的 `.production.min.js` 与 React 19 的 `.production.js` 两种命名都兼容。
+- 输出是经典 script 而非 ES module，因为 module script 在 `file://` 下会被 CORS 直接拦掉，
+  而演示包的全部意义就是双击能开。
+- 构建期替换两处：Vite 专有的 `import.meta.env`（在经典 script 里是**解析期**硬错误，
+  会导致整个脚本不执行），以及样式表开头的 Google Fonts `@import`（离线时挂起后失败）。
+  源码两处均保持原样，补偿动作只发生在打包器里。
+
+这不是正式构建。`npm run build`（Vite）仍然是，GitHub Pages 部署的也仍然是它。
+
+### 三、`typescript` 进入 devDependencies
+
+离线构建器需要它做 JSX 转译。Vite 构建路径不受影响。
+
+---
+
 ## 0.11.0 — 部署套件修复（register 数据版本 0.10.1 未改动）
 
 本次只改部署套件与 UI 行为。`src/App.jsx` 里的 `DATA` 与 `COMPUTE` 两个数据块**逐字节未动**，
