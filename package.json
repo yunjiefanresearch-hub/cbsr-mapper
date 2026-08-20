@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "check": "node scripts/check-invariants.mjs",
+    "check": "node scripts/check-invariants.mjs && npm run check:snapshot",
+    "check:snapshot": "python3 tools/build_mapper_snapshot.py --register ../cross-border-stablecoin-register --out src/data.snapshot.js --check",
     "build": "npm run check && vite build && node scripts/check-invariants.mjs --dist",
     "preview": "vite preview",
     "build:offline": "node scripts/build-offline.mjs . dist-offline/mapper.html"

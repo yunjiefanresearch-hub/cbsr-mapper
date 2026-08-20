@@ -1,3 +1,5 @@
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/14172/badge)](https://www.bestpractices.dev/projects/14172)
+
 # CBSR mapper — deployment kit
 
 This turns your `stablecoin-dimension-mapper` (already dropped in as `src/App.jsx`)

@@ -25,6 +25,7 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const APP = path.join(ROOT, "src", "App.jsx");
+const SNAPSHOT = path.join(ROOT, "src", "data.snapshot.js");
 const DIST = path.join(ROOT, "dist");
 
 const failures = [];
@@ -41,7 +42,18 @@ function extract(name) {
   return JSON.parse(line.replace(new RegExp(`^const ${name} = `), "").replace(/;\s*$/, ""));
 }
 
-const DATA = extract("DATA");
+/* DATA no longer lives in App.jsx. It is generated from the register into
+   src/data.snapshot.js by tools/build_mapper_snapshot.py, precisely so that the
+   figure this checker guards cannot be edited by hand into disagreeing with the
+   register. Read it from there. */
+function extractSnapshot() {
+  const text = fs.readFileSync(SNAPSHOT, "utf8");
+  const body = text.split("export const DATA = ")[1];
+  if (!body) throw new Error("invariant checker: src/data.snapshot.js has no DATA export");
+  return JSON.parse(body.replace(/;\s*export default DATA;\s*$/, "").trim());
+}
+
+const DATA = extractSnapshot();
 const COMPUTE = extract("COMPUTE");
 
 // ── 1. No unverified placeholder may ship, anywhere in the data ───────────────
@@ -57,15 +69,49 @@ else pass("no placeholder markers in DATA");
 // These are the numbers the landing page and the README quote. If they drift, the
 // project is over-claiming — the one thing it exists not to do.
 const actualRecords = DATA.records.length;
-const actualCitable = DATA.records.filter((r) => r.citable === true).length;
+const actualReady = DATA.records.filter((r) => r.decision_ready === true).length;
+const actualStructural = DATA.records.filter((r) => r.structural_candidate === true).length;
 
 if (DATA.meta.record_count !== actualRecords)
   fail(`meta.record_count says ${DATA.meta.record_count}, data holds ${actualRecords}`);
 else pass(`record_count matches data (${actualRecords})`);
 
-if (DATA.meta.citable_count !== actualCitable)
-  fail(`meta.citable_count says ${DATA.meta.citable_count}, data holds ${actualCitable}`);
-else pass(`citable_count matches data (${actualCitable})`);
+if (DATA.meta.decision_ready_count !== actualReady)
+  fail(`meta.decision_ready_count says ${DATA.meta.decision_ready_count}, data holds ${actualReady}`);
+else pass(`decision_ready_count matches data (${actualReady})`);
+
+if (DATA.meta.structural_candidate_count !== actualStructural)
+  fail(
+    `meta.structural_candidate_count says ${DATA.meta.structural_candidate_count}, ` +
+      `data holds ${actualStructural}`
+  );
+else pass(`structural_candidate_count matches data (${actualStructural})`);
+
+/* ── The invariant this project needed and did not have ──────────────────────
+   The mapper shipped `citable_count: 46` for weeks after the register had
+   retracted it: 46 is the count of STRUCTURAL CANDIDATES, and the number of
+   records the register will project as citable current law was 0. The defect
+   was possible because one boolean, `citable`, stood for two different ideas.
+
+   So: the legacy key survives for compatibility, but it must equal the STRICT
+   gate. If anyone ever redefines it back to the loose one, the build stops. */
+if (DATA.meta.citable_count !== undefined && DATA.meta.citable_count !== actualReady)
+  fail(
+    `legacy meta.citable_count says ${DATA.meta.citable_count} but the strict gate ` +
+      `holds ${actualReady}. That key must mean decision-ready, never structural candidates.`
+  );
+else pass(`legacy citable_count is pinned to the strict gate (${actualReady})`);
+
+const looseCitable = DATA.records.filter((r) => r.citable === true).length;
+if (looseCitable !== actualReady)
+  fail(
+    `${looseCitable} records carry citable=true but only ${actualReady} are decision-ready`
+  );
+else pass(`per-record citable matches decision_ready (${actualReady})`);
+
+if (actualStructural < actualReady)
+  fail("structural candidates cannot be fewer than decision-ready records");
+else pass("structural candidates >= decision-ready (gate ordering holds)");
 
 // ── 3. The corridor count the front page claims must be the count that exists ─
 const jurs = Object.keys(DATA.jurisdictions);
