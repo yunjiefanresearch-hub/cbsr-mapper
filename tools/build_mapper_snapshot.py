@@ -133,7 +133,18 @@ def _project_record(record: dict) -> dict:
 
 
 def build(register_dir: Path) -> dict:
-    dataset = json.loads((register_dir / "dataset.json").read_text(encoding="utf-8"))
+    dataset_path = register_dir / "dataset.json"
+    if not dataset_path.exists():
+        raise SystemExit(
+            f"REGISTER NOT FOUND: no dataset.json under {register_dir}\n"
+            f"  (looked for {dataset_path})\n"
+            "  --register must point at a checkout of cross-border-stablecoin-register.\n"
+            "  Locally: clone it as a sibling of cbsr-mapper/, matching the path\n"
+            "  package.json's check:snapshot script and DEPLOY.md already use.\n"
+            "  In CI: the register repo must be checked out in the same job, as a\n"
+            "  sibling directory — see .github/workflows/deploy.yml."
+        )
+    dataset = json.loads(dataset_path.read_text(encoding="utf-8"))
     records = [_project_record(r) for r in dataset.get("records", [])]
 
     coverage: dict[str, list[str]] = {}

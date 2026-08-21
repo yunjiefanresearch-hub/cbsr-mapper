@@ -62,6 +62,14 @@ appears after bundling. Seven invariants: record and citable counts match the da
 jurisdiction pairs and 132 directed corridors are present, the corridor evidence contract
 holds with no half-states and nothing citable-while-pending.
 
+The invariants step also runs `check:snapshot`, which rebuilds `src/data.snapshot.js`
+from `cross-border-stablecoin-register` and fails the build on any disagreement (see
+DEPLOY.md). To make that possible in CI, the workflow checks out that repo as a sibling
+directory next to this one, assuming it lives at
+`yunjiefanresearch-hub/cross-border-stablecoin-register`. If you fork this repo or your
+register has a different owner, update the `repository:` line in
+`.github/workflows/deploy.yml`.
+
 There is no `package-lock.json` and the workflow uses `npm install`, not `npm ci`, so
 nothing needs regenerating before you push.
 

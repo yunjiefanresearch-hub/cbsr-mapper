@@ -17,8 +17,27 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cbsr-mapper
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: cbsr-mapper
+
+      # `npm run check` (below) chains into `check:snapshot`, which rebuilds
+      # src/data.snapshot.js from the register and diffs it byte-for-byte
+      # against the committed one — the anti-drift gate DEPLOY.md describes.
+      # That script is called with `--register ../cross-border-stablecoin-register`,
+      # so the register has to be checked out here too, as a true sibling of
+      # this repo (side-by-side under $GITHUB_WORKSPACE, same as a local
+      # clone). If the register ever moves to a different owner, update
+      # `repository:` below to match.
+      - uses: actions/checkout@v4
+        with:
+          repository: yunjiefanresearch-hub/cross-border-stablecoin-register
+          path: cross-border-stablecoin-register
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -33,7 +52,7 @@ jobs:
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: cbsr-mapper/dist
 
   deploy:
     needs: build
