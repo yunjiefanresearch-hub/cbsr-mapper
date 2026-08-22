@@ -1,3 +1,27 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   本轮修改说明 — v0.11.2（白屏修复）
+
+   症状：部署页 index.html 正常返回，但 #root 始终为空，整页白屏。
+   原因：两处「数据形状与渲染代码脱节」的运行时 TypeError。React 在渲染阶段抛错
+        会卸载整棵树，因此表现为白屏而非局部报错。
+
+   1) Nav 缺 evaluate 标签（首屏必崩，白屏的直接原因）
+      VIEWS = ["evaluate", "map", ...] 共 7 项，Nav 内 labels 表只覆盖 6 项，
+      labels["evaluate"] 为 undefined，labels[v][0] 抛 TypeError。
+      Nav 在任何视图下都渲染，所以进站即白屏。
+      改动：TX.zh / TX.en 增补 navEval / navEvalSub；Nav 的 labels 增补 evaluate 键。
+
+   2) 走廊视图读的是已不存在的字段（切到 corridors 必崩）
+      DATA.corridors 现含两种 schema：一条手写 corridor/v2-rich，其余为
+      corridor/v3-directed-edge 计算骨架。快照按 corridor_id 排序后，
+      DATA.corridors[0] 已不再是 rich 记录。且 v2-rich 记录本身没有 corr.sources，
+      监管关口挂在 leg.sub_gates[] 而非 leg.gate。
+      改动：新增 WORKED_CORRIDOR 按 schema 判别取 rich 记录；
+            CorridorPanel 改读 leg.sub_gates[] 与 leg.sources[]；
+            legPending / corridorPending 同步改判；补五条子关口 / 段级出处排版 CSS。
+
+   数据块 DATA / COMPUTE / MCP 逐字节未动，本次不改任何结论。
+   ═══════════════════════════════════════════════════════════════════════════ */
 import React, { useState, useRef, useEffect } from "react";
 import { DATA } from "./data.snapshot.js";
 import EvaluateView, { EVALUATE_VIEW_CSS } from "./EvaluateView.jsx";
@@ -940,14 +964,17 @@ function DimBlock({ dim, framed, framedHidden, framingActive, audience, t, block
 // the real check keeps its teeth. (Same trick as `ps aux | grep '[s]shd'`.)
 const isPlaceholder = (s) => typeof s === "string" && /[<]VERIFY/i.test(s);
 const legValue = (v) => (v == null || v === "" || isPlaceholder(v) ? null : v);
+// [v0.11.2 修复] 按 corridor/v2-rich 的真实字段判定待核验状态。leg.gate 与 corr.sources
+// 在该 schema 下都不存在：监管关口由 leg.sub_gates[] 承载，出处按段落挂在 leg.sources[] 上。
 const legPending = (leg) =>
   !leg ? null
   : leg.pending ? leg.pending
-  : (isPlaceholder(leg.gate) || isPlaceholder(leg.clears) || isPlaceholder(leg.breaks))
-    ? { fields: ["gate", "clears", "breaks"] }
+  : ((leg.sub_gates || []).some((g) => isPlaceholder(g.requirement) || isPlaceholder(g.analysis))
+     || isPlaceholder(leg.clears) || isPlaceholder(leg.breaks))
+    ? { fields: ["sub_gates", "clears", "breaks"] }
     : null;
 const corridorPending = (corr) =>
-  (corr.boundary_analysis || []).some((leg) => legPending(leg)) || (corr.sources || []).some(isPlaceholder);
+  (corr.boundary_analysis || []).some((leg) => legPending(leg) || (leg.sources || []).some(isPlaceholder));
 
 // Build invariant, in the spirit of the register's own CI checks: no unverified
 // placeholder may reach ANY output surface — view, export, or agent substrate.
@@ -978,15 +1005,34 @@ function CorridorPanel({ corr, t }) {
       <div className="corridor-flow"><span className="corridor-k">{t.corrFlow}</span><span className="corridor-flow-v">{corr.flow}</span></div>
 
       <div className="corridor-legs-grid">
+        {/* [v0.11.2 修复] 监管关口改读 leg.sub_gates[]（label / requirement / analysis），
+            出处改读 leg.sources[]，与 corridor/v2-rich 记录一致。 */}
         {corr.boundary_analysis.map((leg) => {
           const pend = legPending(leg);
-          const gate = legValue(leg.gate), clears = legValue(leg.clears), breaks = legValue(leg.breaks);
+          const clears = legValue(leg.clears), breaks = legValue(leg.breaks);
+          const gates = leg.sub_gates || [];
+          const srcs = (leg.sources || []).filter((s) => !isPlaceholder(s));
           return (
             <div key={leg.leg} className={"leg" + (pend ? " leg-pending" : "")}>
               <div className="leg-head"><span className="jbadge">{leg.leg}</span>{pend && <Chip tone="muted">{t.corrPending}</Chip>}</div>
-              <div className="leg-row"><span className="leg-k">{t.corrGate}</span><span className="leg-v">{gate || <em className="pend">{t.corrPendingNote}</em>}</span></div>
+              <div className="leg-row"><span className="leg-k">{t.corrGate}</span><span className="leg-v">
+                {gates.length
+                  ? gates.map((g) => (
+                      <span key={g.id} className="leg-gate">
+                        <span className="leg-gate-l">{g.label}</span>
+                        <span className="leg-gate-r">{legValue(g.requirement)}</span>
+                        {legValue(g.analysis) && <span className="leg-gate-a">{g.analysis}</span>}
+                      </span>
+                    ))
+                  : <em className="pend">{t.corrPendingNote}</em>}
+              </span></div>
               <div className="leg-row"><span className="leg-k leg-k-clear">{t.corrClears}</span><span className="leg-v">{clears || <em className="pend">—</em>}</span></div>
               <div className="leg-row"><span className="leg-k leg-k-break">{t.corrBreaks}</span><span className="leg-v">{breaks || <em className="pend">—</em>}</span></div>
+              {srcs.length > 0 && (
+                <div className="leg-row"><span className="leg-k">{t.corrSrc}</span>
+                  <span className="leg-v leg-src">{srcs.map((s, i) => <span key={i}>{s}{i < srcs.length - 1 ? " · " : ""}</span>)}</span>
+                </div>
+              )}
               {pend && pend.needs && <div className="leg-row leg-needs"><span className="leg-k">{t.corrNeeds}</span><span className="leg-v"><em className="pend">{pend.needs}</em></span></div>}
             </div>
           );
@@ -995,13 +1041,17 @@ function CorridorPanel({ corr, t }) {
 
       <div className="corridor-key"><span className="corridor-key-label">{t.corrKey}</span>{corr.key_constraint}</div>
       {corr.us_doctrinal_link && <div className="corridor-uslink"><span className="corridor-k">{t.corrUsLink}</span><span>{corr.us_doctrinal_link}</span></div>}
-      <div className="corridor-src"><span className="corridor-k">{t.corrSrc}</span>
-        <span className="corridor-src-v">{corr.sources.filter((s) => !isPlaceholder(s)).map((s, i, a) => <span key={i}>{s}{i < a.length - 1 ? " · " : ""}</span>)}</span>
-      </div>
     </div>
   );
 }
 
+
+// [v0.11.2 修复] worked example 的选取。CorridorPanel 只消费手写的 RICH 记录
+// (corridor/v2-rich: 带 legs / boundary_analysis / sources)；DATA.corridors 里其余
+// 记录是 v3-directed-edge 计算骨架，没有这三个字段。原先按 DATA.corridors[0] 取，
+// 快照按 corridor_id 排序后首位变成 v3 骨架，corr.legs.join 抛错使走廊视图整页崩溃。
+// 这里按 schema 判别取唯一的 rich 记录。
+const WORKED_CORRIDOR = (DATA.corridors || []).find((c) => c && c.schema === "corridor/v2-rich") || null;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // v6 — layer-coverage build. The five views below expose the register layers the
@@ -1017,8 +1067,10 @@ const VIEWS = ["evaluate", "map", "corridors", "substrate", "forward", "structur
 // T literal above stays untouched.
 const TX = {
   zh: {
-    navMap: "维度地图", navCorr: "走廊", navSub: "约束基底", navFwd: "前瞻", navStruct: "结构", navAgents: "机器接口",
-    navMapSub: "节点层", navCorrSub: "有向可行性 + 时间", navSubSub: "八约束 · 六交互 · C1–C8", navFwdSub: "触发register + 敏感度",
+    // [v0.11.2 修复] 新增 navEval / navEvalSub：VIEWS 首项 "evaluate" 此前没有对应的导航标题与副标题，
+    // Nav 的 labels 表因此取到 undefined，undefined[0] 抛错导致整棵 React 树未挂载（白屏）。
+    navEval: "合规评估", navMap: "维度地图", navCorr: "走廊", navSub: "约束基底", navFwd: "前瞻", navStruct: "结构", navAgents: "机器接口",
+    navEvalSub: "确定性判定 + 回执", navMapSub: "节点层", navCorrSub: "有向可行性 + 时间", navSubSub: "八约束 · 六交互 · C1–C8", navFwdSub: "触发register + 敏感度",
     navStructSub: "对账 · 结算 · 收敛", navAgentsSub: "MCP · 可引用给机器",
     // corridor "why" (grounded explanation of the computed class)
     whyH: "为何是这个类别：落到约束基底",
@@ -1165,8 +1217,9 @@ const TX = {
     expAsOfCol: "截至日期类别",
   },
   en: {
-    navMap: "Dimension map", navCorr: "Corridors", navSub: "Substrate", navFwd: "Forward", navStruct: "Structure", navAgents: "Machine surface",
-    navMapSub: "node layer", navCorrSub: "directed feasibility + time", navSubSub: "8 constraints · 6 interactions · C1–C8", navFwdSub: "trigger register + sensitivity",
+    // [v0.11.2 fix] navEval / navEvalSub added: see the zh block above.
+    navEval: "Evaluate", navMap: "Dimension map", navCorr: "Corridors", navSub: "Substrate", navFwd: "Forward", navStruct: "Structure", navAgents: "Machine surface",
+    navEvalSub: "deterministic decision + receipt", navMapSub: "node layer", navCorrSub: "directed feasibility + time", navSubSub: "8 constraints · 6 interactions · C1–C8", navFwdSub: "trigger register + sensitivity",
     navStructSub: "reconciliation · settlement · convergence", navAgentsSub: "MCP · citable for machines",
     // corridor "why" (grounded explanation of the computed class)
     whyH: "Why this class: grounded in the substrate",
@@ -2445,7 +2498,10 @@ function SessionSummary({ t, session }) {
 }
 
 function Nav({ view, setView, t }) {
+  // [v0.11.2 修复] 补 evaluate 键。VIEWS = ["evaluate", ...] 共 7 项，此处原只覆盖 6 项，
+  // labels["evaluate"] 为 undefined，下面 labels[v][0] 在首次渲染即抛 TypeError。
   const labels = {
+    evaluate: [t.navEval, t.navEvalSub],
     map: [t.navMap, t.navMapSub], corridors: [t.navCorr, t.navCorrSub], substrate: [t.navSub, t.navSubSub], forward: [t.navFwd, t.navFwdSub],
     structure: [t.navStruct, t.navStructSub], agents: [t.navAgents, t.navAgentsSub],
   };
@@ -3481,7 +3537,7 @@ export default function App() {
       {stage === "idle" && <div className="empty">{DEMO_MODE ? t.emptyDemo : t.empty}</div>}
       </>)}
 
-      {view === "corridors" && <CorridorExplorer t={t} ui={ui} o={o} d={d} setO={setO} setD={setD} worked={(DATA.corridors && DATA.corridors[0]) || null} asOf={asOf} setAsOf={setAsOf} />}
+      {view === "corridors" && <CorridorExplorer t={t} ui={ui} o={o} d={d} setO={setO} setD={setD} worked={WORKED_CORRIDOR} asOf={asOf} setAsOf={setAsOf} />}
       {view === "substrate" && <SubstrateView t={t} ui={ui} sj={sj} setSj={setSj} sc={sc} setSc={setSc} />}
       {view === "forward" && <ForwardView t={t} ui={ui} fj={fj} setFj={setFj} asOf={asOf} setAsOf={setAsOf} />}
       {view === "structure" && <StructureView t={t} ui={ui} />}
@@ -3657,6 +3713,13 @@ const CSS = `@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono
 .leg-k{flex:0 0 88px; font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--slate); padding-top:2px;}
 .leg-k-clear{color:#1E3A5F;} .leg-k-break{color:#B23B36;}
 .leg-v{color:#191B17; word-break:break-word;} .leg-v .pend{color:var(--gap); font-style:italic;}
+/* [v0.11.2 新增] 段内子关口 (leg.sub_gates) 与段级出处的排版。 */
+.leg-gate{display:block; margin-bottom:8px;}
+.leg-gate:last-child{margin-bottom:0;}
+.leg-gate-l{display:block; font-family:'IBM Plex Sans',-apple-system,system-ui,"Segoe UI",Roboto,sans-serif; font-size:12px; font-weight:600; color:var(--accent); margin-bottom:2px;}
+.leg-gate-r{display:block;}
+.leg-gate-a{display:block; margin-top:3px; padding-left:9px; border-left:2px solid var(--rule); color:var(--slate);}
+.leg-src{font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace; font-size:11px; line-height:1.5; color:var(--slate);}
 .corridor-key{margin-top:13px; padding:11px 13px; background:var(--ink); color:var(--paper); border-radius:6px; font-size:13px; line-height:1.6;}
 .corridor-key-label{display:block; font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace; font-size:9.5px; letter-spacing:.06em; color:#B9BCB2; text-transform:uppercase; margin-bottom:5px;}
 .corridor-uslink{display:flex; gap:9px; margin-top:11px; font-size:12px; line-height:1.55; color:#565A50;}

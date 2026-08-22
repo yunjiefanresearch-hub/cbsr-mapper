@@ -1,5 +1,40 @@
 # 变更记录
 
+## 0.11.2 — 白屏修复（DATA / COMPUTE / MCP 数据块未改动）
+
+部署页返回 index.html，但 `#root` 始终为空。两处渲染期 `TypeError` 让 React 卸载整棵树，
+表现为整页白屏而非局部报错。本次只修渲染代码与数据形状的脱节，不改任何结论。
+
+### 一、`Nav` 缺 `evaluate` 标签 — 首屏必崩
+
+`VIEWS` 为 `["evaluate", "map", "corridors", "substrate", "forward", "structure", "agents"]`
+共七项，`Nav` 内部的 `labels` 表只覆盖后六项。`labels["evaluate"]` 取到 `undefined`，
+紧接着的 `labels[v][0]` 抛 `TypeError`。`Nav` 在任何视图下都渲染，所以进站即白屏，
+且与当前选中哪个视图无关——这是本次白屏的直接原因。
+
+- `TX.zh` / `TX.en` 增补 `navEval` / `navEvalSub`；
+- `Nav` 的 `labels` 增补 `evaluate` 键。
+
+### 二、走廊视图读取已不存在的字段 — 切到 corridors 必崩
+
+`DATA.corridors` 现在混装两种 schema：一条手写的 `corridor/v2-rich`（HK→BR 工作示例），
+其余八条是 `corridor/v3-directed-edge` 计算骨架。快照生成后按 `corridor_id` 排序，
+`DATA.corridors[0]` 已不再是那条 rich 记录，`corr.legs.join()` 直接抛错。
+即便取对了记录，`CorridorPanel` 读的 `corr.sources` 与 `leg.gate` 在 v2-rich 下也都不存在：
+出处按段落挂在 `leg.sources[]`，监管关口挂在 `leg.sub_gates[]`。
+
+- 新增 `WORKED_CORRIDOR`，按 `schema === "corridor/v2-rich"` 判别取记录，不再依赖数组下标；
+- `CorridorPanel` 改读 `leg.sub_gates[]`（label / requirement / analysis）与 `leg.sources[]`；
+- `legPending` / `corridorPending` 的占位符判定同步改到新字段；
+- 补 `.leg-gate` / `.leg-gate-l` / `.leg-gate-r` / `.leg-gate-a` / `.leg-src` 五条排版样式。
+
+### 三、验证覆盖
+
+七个视图 × 中英双语、132 条有向走廊、12 法域 × C1–C8 约束基底、12 法域前瞻视图、
+五个 MCP 工具 × 12 法域、五个时间旅行日期，以及全部确定性导出
+（走廊 CSV、可引用 CSV、BibTeX、CITATION.cff、PDF、substrate）均已逐一渲染通过。
+`node scripts/check-invariants.mjs` 的 11 条不变量全部成立。
+
 ## 0.11.1 — 演示模式与离线构建（register 数据版本 0.10.1 未改动）
 
 `DATA` 与 `COMPUTE` 两个数据块**逐字节未动**。本次只加开关、不改结论。
