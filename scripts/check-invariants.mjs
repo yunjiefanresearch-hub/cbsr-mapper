@@ -22,10 +22,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { DATA } from "../src/data.snapshot.js";
+import { COMPUTE } from "../src/compute.snapshot.js";
+import { MCP } from "../src/mcp.snapshot.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const APP = path.join(ROOT, "src", "App.jsx");
-const SNAPSHOT = path.join(ROOT, "src", "data.snapshot.js");
 const DIST = path.join(ROOT, "dist");
 
 const failures = [];
@@ -33,28 +34,9 @@ const passes = [];
 const fail = (m) => failures.push(m);
 const pass = (m) => passes.push(m);
 
-// ── load the two data blocks straight out of the source ──────────────────────
-const src = fs.readFileSync(APP, "utf8");
-
-function extract(name) {
-  const line = src.split("\n").find((l) => l.startsWith(`const ${name} = `));
-  if (!line) throw new Error(`invariant checker: could not find "const ${name} = " in src/App.jsx`);
-  return JSON.parse(line.replace(new RegExp(`^const ${name} = `), "").replace(/;\s*$/, ""));
-}
-
-/* DATA no longer lives in App.jsx. It is generated from the register into
-   src/data.snapshot.js by tools/build_mapper_snapshot.py, precisely so that the
-   figure this checker guards cannot be edited by hand into disagreeing with the
-   register. Read it from there. */
-function extractSnapshot() {
-  const text = fs.readFileSync(SNAPSHOT, "utf8");
-  const body = text.split("export const DATA = ")[1];
-  if (!body) throw new Error("invariant checker: src/data.snapshot.js has no DATA export");
-  return JSON.parse(body.replace(/;\s*export default DATA;\s*$/, "").trim());
-}
-
-const DATA = extractSnapshot();
-const COMPUTE = extract("COMPUTE");
+// All three data surfaces are generated modules. Importing them here ensures
+// the build checks exactly what Vite ships, rather than a stale hand-pasted
+// literal or a second parser with subtly different rules.
 
 // ── 1. No unverified placeholder may ship, anywhere in the data ───────────────
 // An unverified field is null, with the gap declared in leg.pending. It is never a
@@ -113,7 +95,72 @@ if (actualStructural < actualReady)
   fail("structural candidates cannot be fewer than decision-ready records");
 else pass("structural candidates >= decision-ready (gate ordering holds)");
 
-// ── 3. The corridor count the front page claims must be the count that exists ─
+const sixAxisKeys = [
+  "claim_class",
+  "binding_status",
+  "evidence_tier",
+  "source_disposition",
+  "review_status",
+  "review_stage",
+];
+const incompleteAxisRecord = DATA.records.find((record) =>
+  sixAxisKeys.some((key) => record[key] === undefined || record[key] === null || record[key] === "")
+);
+if (incompleteAxisRecord)
+  fail(`record ${incompleteAxisRecord.id} does not carry all six evidence axes`);
+else pass("every record carries all six evidence axes");
+
+// ── 3. The three generated surfaces must identify one Register build ─────────
+if (COMPUTE._artifact.register_version !== DATA.meta.version)
+  fail(
+    `COMPUTE targets register ${COMPUTE._artifact.register_version}, ` +
+      `DATA is ${DATA.meta.version}`
+  );
+else pass(`COMPUTE register version matches DATA (${DATA.meta.version})`);
+
+if (COMPUTE._artifact.generated !== DATA.meta.generated)
+  fail(
+    `COMPUTE generated ${COMPUTE._artifact.generated}, DATA generated ${DATA.meta.generated}`
+  );
+else pass(`COMPUTE generated date matches DATA (${DATA.meta.generated})`);
+
+if (MCP.version !== DATA.meta.version)
+  fail(`MCP catalogue is ${MCP.version}, DATA is ${DATA.meta.version}`);
+else pass(`MCP version matches DATA (${MCP.version})`);
+
+const mcpTools = Object.values(MCP.layers).flat();
+const mcpNames = mcpTools.map((tool) => tool.n);
+if (MCP.count !== mcpTools.length)
+  fail(`MCP count says ${MCP.count}, generated layers contain ${mcpTools.length}`);
+else pass(`MCP count matches generated catalogue (${MCP.count})`);
+if (new Set(mcpNames).size !== mcpNames.length)
+  fail("MCP generated catalogue contains duplicate tool names");
+else pass("MCP generated catalogue has unique tool names");
+
+const requiredMcpNames = [
+  "interaction_sets",
+  "architectural_patterns",
+  "open_questions",
+  "corridor_directed",
+  "search_evidence",
+  "get_rule",
+  "evaluate_action",
+  "compare_jurisdictions",
+  "watch_changes",
+  "audit_decision",
+];
+const absentMcpNames = requiredMcpNames.filter((name) => !mcpNames.includes(name));
+if (absentMcpNames.length)
+  fail(`MCP catalogue is missing contract tools: ${absentMcpNames.join(", ")}`);
+else pass("MCP catalogue includes constraint, directed-corridor, and agentic tools");
+
+if (!MCP.guardrails.some((guard) =>
+  /official/.test(guard) && /current/.test(guard) && /reconciled/.test(guard)
+))
+  fail("MCP guardrails do not state the full six-axis decision-ready gate");
+else pass("MCP guardrails state the full six-axis decision-ready gate");
+
+// ── 4. The corridor count the front page claims must be the count that exists ─
 const jurs = Object.keys(DATA.jurisdictions);
 const pairs = Object.keys(COMPUTE.corridors);
 const directed = pairs.reduce((n, k) => n + Object.keys(COMPUTE.corridors[k].d).length, 0);
@@ -127,8 +174,14 @@ else pass(`${pairs.length} undirected pairs (complete for ${jurs.length} jurisdi
 if (directed !== expectedDirected)
   fail(`expected ${expectedDirected} directed corridors, COMPUTE holds ${directed}`);
 else pass(`${directed} directed corridors — the number the front page claims`);
+if (COMPUTE._artifact.directed_corridors !== directed)
+  fail(
+    `COMPUTE artifact says ${COMPUTE._artifact.directed_corridors} directed corridors, ` +
+      `compact layer contains ${directed}`
+  );
+else pass("COMPUTE artifact corridor count matches compact layer");
 
-// ── 4. A citable claim may not rest on a pending leg ──────────────────────────
+// ── 5. A citable claim may not rest on a pending leg ──────────────────────────
 // The evidence contract, enforced: a leg is either verified (a value + a tier) or
 // pending (null values + a declared gap). No half-states, and nothing marked citable
 // while its evidence is still outstanding.

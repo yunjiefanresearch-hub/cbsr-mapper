@@ -3,10 +3,12 @@
   "private": true,
   "version": "0.11.2",
   "type": "module",
+  "engines": { "node": "^20.19.0 || >=22.12.0" },
   "scripts": {
     "dev": "vite",
-    "check": "node scripts/check-invariants.mjs && npm run check:snapshot",
-    "check:snapshot": "python3 tools/build_mapper_snapshot.py --register ../cross-border-stablecoin-register --out src/data.snapshot.js --check",
+    "test": "node --test scripts/register-sync.test.mjs",
+    "check": "npm test && node scripts/check-invariants.mjs && npm run check:snapshots",
+    "check:snapshots": "python tools/build_mapper_snapshot.py --register ../cross-border-stablecoin-register --out src/data.snapshot.js --check && python tools/build_mapper_derived.py --register ../cross-border-stablecoin-register --mcp-out src/mcp.snapshot.js --compute-out src/compute.snapshot.js --check",
     "build": "npm run check && vite build && node scripts/check-invariants.mjs --dist",
     "preview": "vite preview",
     "build:offline": "node scripts/build-offline.mjs . dist-offline/mapper.html"
@@ -16,8 +18,8 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^5.4.11",
+    "@vitejs/plugin-react": "6.1.1",
+    "vite": "8.3.0",
     "typescript": "^5.6.0"
   }
 }
