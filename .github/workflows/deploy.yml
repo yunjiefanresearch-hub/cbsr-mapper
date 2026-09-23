@@ -21,27 +21,37 @@ jobs:
       run:
         working-directory: cbsr-mapper
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           path: cbsr-mapper
 
-      # `npm run check` (below) chains into `check:snapshot`, which rebuilds
-      # src/data.snapshot.js from the register and diffs it byte-for-byte
-      # against the committed one — the anti-drift gate DEPLOY.md describes.
+      # `npm run check` (below) chains into `check:snapshots`, which rebuilds
+      # DATA, COMPUTE, and MCP snapshots from the register and diffs them
+      # byte-for-byte against the committed modules (documented in README.md).
       # That script is called with `--register ../cross-border-stablecoin-register`,
       # so the register has to be checked out here too, as a true sibling of
       # this repo (side-by-side under $GITHUB_WORKSPACE, same as a local
       # clone). If the register ever moves to a different owner, update
       # `repository:` below to match.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           repository: yunjiefanresearch-hub/cross-border-stablecoin-register
+          # SNAPSHOT_CONTRACT_REF: this full SHA and all three generated mapper
+          # snapshots must be upgraded in the same change. Never point this at
+          # main: a moving checkout can combine newer records/MCP metadata with
+          # an older computed layer. Replace with the repaired Register commit.
+          ref: 270a002e8d66bb9971b3638dfcab52f3b2f6d2fd
           path: cross-border-stablecoin-register
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 20
-      - run: npm install
+          node-version: 22
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - run: npm ci --ignore-scripts
+      - name: Audit the complete dependency graph
+        run: npm audit --audit-level=moderate
 
       # Invariants BEFORE the build: a violated invariant must stop the deploy, not
       # be discovered in it. `npm run build` also re-runs them against dist/, so a
@@ -50,7 +60,7 @@ jobs:
         run: npm run check
 
       - run: npm run build
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
           path: cbsr-mapper/dist
 
@@ -62,4 +72,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5

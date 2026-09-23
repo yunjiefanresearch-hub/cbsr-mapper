@@ -5,7 +5,7 @@
 This turns your `stablecoin-dimension-mapper` (already dropped in as `src/App.jsx`)
 into a live URL you can visit and embed in the landing page.
 
-The mapper depends **only on React** and ships its data snapshot and CSS inline, so the
+The mapper depends **only on React** and ships generated data/compute/MCP snapshots with its CSS, so the
 **deterministic core** — the dimension map, corridors, the 12×12 matrix, time-travel, and
 exports — runs fully client-side with **zero configuration** and **no model calls**.
 The AI features (document / URL import, auto-map, question generation) are optional and
@@ -33,7 +33,7 @@ cbsr-mapper-deploy/
 Requires Node.js 18+.
 
 ```bash
-npm install
+npm ci --ignore-scripts
 npm run build      # outputs static files to dist/
 npm run preview    # optional: preview the production build locally
 ```
@@ -146,9 +146,21 @@ Two things that used to muddy this picture and are now fixed:
 
 ## The two dates: snapshot vs today
 
+### Build security baseline
+
+Use Node.js 22.12 or newer (the exact supported range is in `package.json`). The
+reviewed build uses Vite 8.3.0 and React plugin 6.1.1, locked in `package-lock.json`.
+`npm ci --ignore-scripts` reproduces that dependency graph. Run `npm audit` for a
+fresh advisory check; the 10 September 2026 installation reported no known
+vulnerabilities. This is not a claim that the software has no vulnerabilities.
+
+This upgrade addresses the old Vite/esbuild development-server advisory chain,
+including [the Windows file-deny bypass](https://github.com/vitejs/vite/security/advisories/GHSA-fx2h-pf6j-xcff).
+The production build and bundled snapshot checks are still mandatory before deploy.
+
 The register is a **dated** artifact, and the tool keeps two clocks apart on purpose:
 
-- **`DATA.meta.as_of`** — the day the provisions were verified. Frozen. It is what the citation
+- **`DATA.meta.as_of`** — the published dataset build date, not proof that every provision was verified. Frozen. It is what the citation
   discipline rests on, and it never silently becomes "today". Shown as "data snapshot as of …".
 - **The real calendar day** — used by the time engine. The dated commencements baked into
   `COMPUTE` (US GENIUS §18 outer cap `2027-01-18`, UK SI 2026/102 gazetted `2027-10-25`) are
@@ -158,12 +170,12 @@ The register is a **dated** artifact, and the tool keeps two clocks apart on pur
 
 The timeline therefore shows both, and the slider carries a **data snapshot baseline** stop so
 you can always see the state the register itself saw. Contingent triggers with no gazetted date
-(`kr-daba-enacted`, `tw-vas-act-enacted`) still do **not** auto-apply — that is the register's
+(`kr-daba-enacted`, `tw-vas-act-commencement`) still do **not** auto-apply — that is the register's
 scheduled-vs-contingent discipline and it is unchanged.
 
-If you want the provisions themselves to move too, that is Tier 3: `meta.json` from your
-register API now updates `as_of` and `record_count`, not just the version (it previously did
-not, which is why a live-synced deploy still displayed the compile-time snapshot date).
+The public API check never advances this layer independently. Records are loaded only when
+`records.json`, `meta.json`, `DATA`, and `COMPUTE` all identify the same version and generated
+date. A newer records response therefore cannot be mixed with an older corridor computation.
 
 ### Two version numbers, deliberately different
 
@@ -173,17 +185,35 @@ CITATION.cff exports. Fixing a UI bug bumps the first and must not touch the sec
 
 ---
 
-## Tier 3 — sync the live register (optional)
+## Tier 3 — verify against the public register API
 
-By default the map runs on the data snapshot baked into `src/App.jsx`. To have it pull the
-current register instead, set `REGISTER_API` near the top of `src/App.jsx` to your deployed
-CBSR `api/` directory (the one that serves `records.json` and `meta.json`), then rebuild:
+By default the map checks its generated snapshots against the canonical public endpoint:
 
 ```js
-const REGISTER_API = "https://<username>.github.io/<register-repo>/api";
+https://yunjiefanresearch-hub.github.io/cross-border-stablecoin-register/api
 ```
 
-If the fetch fails, the app silently falls back to the bundled snapshot.
+Set `window.__CBSR_REGISTER_API__` before the application script to select a mirror. Set it to
+the empty string to run fully offline. The response must use the published envelopes
+(`records.json.data` is the record array and `meta.json.data` is metadata), contain the complete
+record-id set, reproduce the strict six-axis gate counts, and match the bundled register version
+and generated date. On any network or contract failure the banner explicitly reports a fallback;
+no part of the rejected response is applied.
+
+### Updating the three generated snapshots
+
+Clone the Register as a sibling, then regenerate and verify all three surfaces together:
+
+```bash
+python tools/build_mapper_snapshot.py --register ../cross-border-stablecoin-register --out src/data.snapshot.js
+python tools/build_mapper_derived.py --register ../cross-border-stablecoin-register --mcp-out src/mcp.snapshot.js --compute-out src/compute.snapshot.js
+npm run check:snapshots
+```
+
+`data.snapshot.js`, `mcp.snapshot.js`, and `compute.snapshot.js` are one contract unit. The full
+Register commit SHA under `SNAPSHOT_CONTRACT_REF` in `.github/workflows/deploy.yml` must be updated
+in the same change. Never replace it with `main`: a moving branch would make an otherwise
+reproducible mapper build depend on merge timing.
 
 ---
 

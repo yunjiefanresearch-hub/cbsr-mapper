@@ -7,8 +7,8 @@ has retracted.
 
 WHY THIS EXISTS
 ---------------
-The mapper (2-cbsr-mapper/src/App.jsx) carries a hand-pasted `const DATA = {...}`
-snapshot. At the time of writing it was pinned to register v0.10.1 and published
+The mapper once carried a hand-pasted `const DATA = {...}` snapshot. At the time
+of writing it was pinned to register v0.10.1 and published
 `citable_count: 46` with a per-record boolean `citable: true`.
 
 The register at v0.11.0 says something materially different:
@@ -140,7 +140,7 @@ def build(register_dir: Path) -> dict:
             f"  (looked for {dataset_path})\n"
             "  --register must point at a checkout of cross-border-stablecoin-register.\n"
             "  Locally: clone it as a sibling of cbsr-mapper/, matching the path\n"
-            "  package.json's check:snapshot script and DEPLOY.md already use.\n"
+            "  package.json's check:snapshots script and README.md already use.\n"
             "  In CI: the register repo must be checked out in the same job, as a\n"
             "  sibling directory — see .github/workflows/deploy.yml."
         )
