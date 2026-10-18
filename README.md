@@ -2,6 +2,12 @@
 
 # CBSR mapper — deployment kit
 
+The **CBSR mapper** is the interactive explorer for the **Cross-Border Stablecoin Register**,
+the first regulatory dataset of CBSR's evidence infrastructure for agentic finance.
+Visit the [official CBSR website](https://cbsr.site/), the
+[dataset and citation guide](https://cbsr.site/data/), or the
+[corridor explorer](https://cbsr.site/corridors.html).
+
 This turns your `stablecoin-dimension-mapper` (already dropped in as `src/App.jsx`)
 into a live URL you can visit and embed in the landing page.
 
