@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
         <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cross-Border Stablecoin Register: the interactive map</title>
-    <meta name="description" content="Interactive map of the Cross-Border Stablecoin Register. All 132 directed corridors across twelve jurisdictions, recomputed from primary-law records. Time-travel to a pending regime's commencement date, and export CSV, BibTeX, CITATION.cff, or PDF." />
+    <title>CBSR mapper | Cross-Border Stablecoin Register</title>
+    <meta name="description" content="Explore 132 directed stablecoin corridors across twelve jurisdictions. The interactive map shows the register's dated snapshot, corridor matrix and timeline, with exports in CSV, BibTeX, CITATION.cff and PDF." />
     <meta name="author" content="Yunjie Fan" />
     <meta name="theme-color" content="#EDEFEB" />
     <!-- Favicon as a data URI on purpose: Vite resolves asset hrefs in index.html at build
@@ -16,45 +16,29 @@
     <!-- Social preview. This page's URL is fixed and live, so og:url and canonical are set. -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Cross-Border Stablecoin Register" />
-    <meta property="og:title" content="One stablecoin, twelve jurisdictions, a different verdict at every border." />
-    <meta property="og:description" content="The interactive map: all 132 directed corridors across twelve jurisdictions, recomputed from primary-law records rather than hard-coded." />
+    <meta property="og:title" content="CBSR mapper | Cross-Border Stablecoin Register" />
+    <meta property="og:description" content="Explore 132 directed stablecoin corridors across twelve jurisdictions in the register's dated snapshot, corridor matrix and timeline." />
     <meta property="og:url" content="https://yunjiefanresearch-hub.github.io/cbsr-mapper/" />
     <meta property="og:image" content="https://yunjiefanresearch-hub.github.io/cbsr-mapper/og-card.png" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="US to EU clears. EU to US is in transition and resolves to Category II when the GENIUS Act commences, on the earlier of 18 January 2027 or 120 days after final rules. Same border, two answers." />
+    <meta property="og:image:alt" content="CBSR interactive corridor map for stablecoin rules across twelve jurisdictions, with an illustrated corridor matrix." />
     <meta property="og:locale" content="en" />
     <meta property="og:locale:alternate" content="zh_CN" />
     <link rel="canonical" href="https://yunjiefanresearch-hub.github.io/cbsr-mapper/" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="One stablecoin, twelve jurisdictions, a different verdict at every border." />
-    <meta name="twitter:description" content="The interactive map: all 132 directed corridors across twelve jurisdictions, recomputed from primary-law records." />
+    <meta name="twitter:title" content="CBSR mapper | Cross-Border Stablecoin Register" />
+    <meta name="twitter:description" content="Explore 132 directed stablecoin corridors across twelve jurisdictions in the register's dated snapshot, corridor matrix and timeline." />
     <meta name="twitter:image" content="https://yunjiefanresearch-hub.github.io/cbsr-mapper/og-card.png" />
-    <meta name="twitter:image:alt" content="US to EU clears. EU to US is in transition and resolves to Category II when the GENIUS Act commences, on the earlier of 18 January 2027 or 120 days after final rules. Same border, two answers." />
+    <meta name="twitter:image:alt" content="CBSR interactive corridor map for stablecoin rules across twelve jurisdictions, with an illustrated corridor matrix." />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
 
-    <!-- ================= AI FEATURES: ONE LINE TO TURN THEM ON =================
-         Document / URL import, auto-map, and question generation all POST to the
-         Anthropic Messages API. On a static host those calls carry no credentials, so
-         they MUST go through your own authenticated proxy. Until this line is live, the
-         app degrades cleanly: it shows a named diagnosis (not "network error"), offers
-         the manual-feature fallback, and the whole deterministic core — dimension map,
-         corridors, the 12x12 matrix, the timeline, every export — keeps working.
-
-         To enable: deploy worker/ (README, Tier 2), then UNCOMMENT the line below and
-         paste the full URL INCLUDING the secret path segment. No trailing slash — the
-         Worker matches that segment exactly (the app now strips one for you anyway).
-         Verify first by opening the same URL in a browser tab: the Worker answers a GET
-         with a JSON health check, so you can confirm the path and the key for free.
-
-         Prefer not to rebuild? Run the app and paste the URL into the field in the
-         yellow banner instead: it applies immediately and is remembered in that browser.
-         ========================================================================= -->
-    <!-- <script>window.__CBSR_LLM_PROXY__ = "https://YOUR-WORKER.workers.dev/YOUR_PROXY_SECRET";</script> -->
+    <!-- DEPLOY.md describes how to enable model features in a self-hosted build.
+         The example Worker's secret-bearing URL belongs in the browser's proxy field. -->
   </head>
   <body>
     <div id="root"></div>

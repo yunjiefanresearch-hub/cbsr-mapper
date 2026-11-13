@@ -35,7 +35,7 @@ import { EvidenceLedger, RecordAxes, EVIDENCE_AXES_CSS } from "./EvidenceAxes.js
 // A response is applied only when its version/build identity also matches the
 // bundled COMPUTE layer, so this can never create a mixed-version view.
 const REGISTER_API = configuredRegisterApi(typeof window === "undefined" ? {} : window);
-const CONTACT = "mailto:yunjiefan.research@gmail.com"; // enables the CTA seam at the end of the mapping flow
+const METHODOLOGY_URL = "https://cbsr.site/method.html";
 const LLM_PROXY = "";    // self-host only: URL of YOUR authenticated proxy for /v1/messages.
                          // Leave "" in the Anthropic artifact sandbox (auth is injected there).
                          // See DEPLOYMENT.md for a ready-to-deploy Cloudflare Worker example.
@@ -418,17 +418,17 @@ const T = {
     f2: "2 · 意向法域(可多选)", noCov: "覆盖空白", dimsU: "dims",
     f3: "3 · 受众",
     audRT: "监管方", audRS: "审查点 + 审查者会问的问题",
-    audPT: "项目方", audPS: "现行要求 + 带去问律师的清单",
+    audPT: "项目方", audPS: "登记册记录与待核查问题",
     qLangL: "问题语言", qAuto: "跟随输入", qZh: "中文", qEn: "EN",
     run: "映射 →", running: "处理中…",
     needDesc: "请先在描述框写/导入业务形态(至少十几个字)再映射。",
     needJur: "至少选一个意向法域。",
-    s1: "第 1 步:理解业务 + 路由维度…", s2: "第 2 步:检索已核验记录…",
-    procRoute: "理解业务形态 + 提取业务特征", procRetrieve: (n) => `检索 ${n} 条已核验记录`, procRetrieveStep: "按规则推导维度 + 检索记录", procFrame: "生成该问的问题",
+    s1: "第 1 步：理解业务并选择维度…", s2: "第 2 步：检索登记册记录…",
+    procRoute: "理解业务形态并提取业务特征", procRetrieve: (n) => `检索 ${n} 条登记册记录`, procRetrieveStep: "按规则推导维度并检索记录", procFrame: "生成待核查问题",
     framingProg: (d, tot) => `正在生成问题… ${d} / ${tot} 组完成(条款与出处已就绪,可先看)`,
     errLimit: "AI 调用被限流(429):这轮跑得太频繁了。等一两分钟再点「映射」。这是 Claude 网页内 AI 调用的额度限制,我无法解除,只能减少调用、加退避。",
     errOverload: "AI 服务暂时过载(529)。稍等片刻再点「映射」。",
-    errNoProxy: "未配置模型代理，AI 功能无法调用。这不是你的网络问题：本页在浏览器里直接向 api.anthropic.com 发请求，会在 CORS 预检阶段就被拒绝，且请求不带任何密钥。修法：按 README「Tier 2」部署一个带密钥的代理，然后在下方输入框粘贴代理地址（含 secret 路径段），或写入 index.html 的 window.__CBSR_LLM_PROXY__ 后重新构建。确定性核心（维度地图 / 走廊 / 12×12 矩阵 / 时间轴 / 导出）不受影响。",
+    errNoProxy: "需要模型代理才能运行此功能。请按 DEPLOY.md 部署代理，并在下方输入代理地址。可继续使用离线维度地图、通道、矩阵和时间轴。",
     errProxyDown: "已配置代理，但请求发不出去。常见三种原因：① 代理地址写错或 Worker 未部署；② Worker 的 ALLOW_ORIGIN 没放行本站域名（浏览器会在 CORS 预检就拦下）；③ 代理域名解析或网络本身不通。可先在浏览器直接打开代理地址做健康检查。",
     errAuth: "代理拒绝了请求（401 / 403）：说明请求到达了代理，但密钥缺失或无效。检查 Worker 是否已执行 wrangler secret put ANTHROPIC_API_KEY，以及该密钥在你的 Anthropic 账号下是否仍然有效。",
     errNotFound: "代理返回 404：请求到了服务器但没命中路由。最常见的是代理地址末尾多了一个斜杠（Worker 对 secret 路径段是精确匹配），其次是模型串不被账号支持（见 App.jsx 顶部 AI_MODEL）。本版已自动去除末尾斜杠，若仍报 404，请核对 secret 路径段与模型串。",
@@ -442,17 +442,17 @@ const T = {
     partA: "这项业务比稳定币更宽(像是一套加密/数字资本论述),只有", partBold: "部分", partC: "落在 register 范围内。下面映射的是其中与 register 维度相关的部分;其余不在本工具覆盖之列。",
     restateL: "理解的业务形态", restateHint: "不准确?在上方描述框改完重新映射。",
     ppL: "监管压力点", ppHint: "(点击跳到对应内容)",
-    resMeta: (c, g, d, aud) => `${c} 条已核验记录${g > 0 ? " · " + g + " 个覆盖空白" : ""} · ${d} 个维度 · 视角:${aud === "regulator" ? "监管方" : "项目方"}`,
+    resMeta: (c, g, d, aud) => `${c} 条登记册记录${g > 0 ? " · " + g + " 个覆盖空白" : ""} · ${d} 个维度 · ${aud === "regulator" ? "监管方" : "项目方"}`,
     tierP: "核心压力点：这套业务最突出触发的维度", tierB: "基线维度：任何此类业务都会例行触发",
     baselineCount: (n, busy) => `${n} 个${busy ? " · 问题生成中" : ""} · 点击展开`, collapseHint: "点击收起",
     pTag: "压力点", back: "↑ 返回压力点目录", why: "为何相关",
     qReg: "审查者会问 / 该核查的点", qProj: "带去问持牌律师的问题",
-    qGen: "模型基于本条目生成 · 非结论", qGap: "无核验记录 · 仅指向该维度",
+    qGen: "模型基于本条目生成 · 待核查", qGap: "无登记册记录 · 仅指向该维度",
     qGenerating: "生成中…", qPendGen: "问题未能生成,可重试。上方条目与出处仍有效。",
     frameFailH: (n) => `问题生成失败：${n} 个条目还没有问题`,
-    frameFailKeep: "已核验记录、条款出处、可引用标记与全部导出都不依赖模型，上方内容依然有效、可直接使用。",
+    frameFailKeep: "上方继续显示登记册记录、来源和审核状态。研究简报仍可下载。",
     frameFailRetry: "只重试缺失的问题",
-    noRec: "覆盖空白 / no verified record",
+    noRec: "覆盖空白",
     gapBody: (j) => `register 暂无 ${j} 此维度的已核验记录。该维度与你的业务相关,你仍需自行查证;工具不会凭空补一条规则。`,
     gapQ: (j, dim) => [`${j} 在「${dim}」上有哪些现行监管要求?`, `${j} 哪个机关对此有管辖权,适用哪部法规?`, `这个维度是否有适用于本业务的特定规则或豁免?`],
     tension: "未决张力", channel: "解决渠道:",
@@ -461,27 +461,27 @@ const T = {
     axBind: "生效", bnForce: "已生效", bnMade: "已通过·未生效", bnPolicy: "政策已定·待立法", bnProp: "提案·待决", bnProhib: "禁止", bnNone: "无制度",
     citable: "✓ 可作现行法引用", citableWord: "可引用", officialSrc: "官方出处",
     axesLegend: "每条记录显示六轴：命题、生效、出处、官方来源、时效与独立复核；六轴全部通过才可作决策依据。",
-    seamH: "地图到此为止。", seamB: "需要针对你具体架构、某几个法域 / 通道的已核验通道分析（可引用记录 + corridor 可行性 + 待核查清单）？", seamBtn: "获取针对性的已核验分析 →",
+    methodLink: "查阅登记册方法 →",
     syncOk: "已同步 live 注册表", syncSnap: "内置快照", syncWait: "同步中…", refreshed: "条已刷新",
     asOf: "快照截至", scopeNote: "覆盖范围：本工具映射的是节点层（法域 × 维度）：业务形态→相关维度、对应条款与该问的问题。走廊可行性、时间维（生效前后）与跨法域分析在完整 register 中，不在此处。",
-    discAsOf: "本快照为冻结版本，核验截至日见页首；监管随时变动（同一日内即可翻转），引用前请对照一手来源核实时效。",
-    scopeNoCov: "所选法域在推导出的维度上暂无已核验记录：这是 register 的覆盖空白，不是描述太模糊。可换用其他法域，或到完整 register 查询。",
+    discAsOf: "页首显示数据快照日期。引用前请对照记录所附来源及审核状态核实时效。",
+    scopeNoCov: "登记册暂无所选法域与相关维度对应的记录。可查询其他法域或查阅完整登记册。",
     manualH: "离线 / 无 AI 兜底：手动勾选业务特征",
     manualB: "路由步骤需要模型；若不可用，可自行勾选下列业务特征，工具仍会用确定性规则给出维度地图、对应记录与可引用子集（此路径不调用模型）。问题生成仍需模型。",
     manualBtn: "用这些特征生成地图",
     manualHDemo: "手动勾选业务特征（覆盖自动识别）",
-    manualBDemo: "上方描述框走的是确定性关键词规则。若它漏掉或误判了某项特征，在这里直接勾选，然后用这些特征重新生成地图——结果同样来自已核验记录。",
+    manualBDemo: "工具按关键词识别业务特征。可在此调整特征，再用登记册记录重新生成地图。",
     refineOpen: "自动识别不准？手动勾选业务特征 ↓",
     refineClose: "收起手动特征 ↑",
     qGenDet: "由本条目的条款 / 张力字段确定性生成 · 非结论",
     aiOffH: "AI 辅助功能未启用",
-    aiOffB: "文档 / 网址导入、「自动映射」和问题生成需要一个已认证的模型代理。在 Anthropic 沙盒里代理是自动注入的；自托管时请按 README「Tier 2」部署 worker/ 里的 Cloudflare Worker，拿到形如 https://你的worker.workers.dev/你的PROXY_SECRET 的地址填到下面。在此期间，下方的手动特征兜底可用，其余全部功能：维度地图、走廊、12×12 矩阵、时间轴、导出：均为确定性，无需模型即可正常使用。",
+    aiOffB: "文档或网址导入、自动映射和问题生成需要模型代理。自托管设置见 DEPLOY.md，也可在下方手动选择业务特征。",
     aiOffManual: "跳到手动映射",
     aiOffTag: "确定性核心不受影响",
     proxyLabel: "或者：填入你的模型代理地址以恢复 AI 功能",
     proxyPh: "https://你的worker.workers.dev/你的PROXY_SECRET",
     proxyApply: "应用",
-    proxyHint: "填入后立即生效，并保存在本浏览器中，刷新后无需重填（清空输入框再点「应用」即可清除）。末尾的斜杠会被自动去掉——Worker 对 secret 路径段是精确匹配，多一个斜杠会返回 404。要对所有访问者生效，请改 index.html 里的 window.__CBSR_LLM_PROXY__ 后重新构建。",
+    proxyHint: "地址保存在本浏览器中。清空输入框并点「应用」即可清除。",
     proxyOn: "代理已设为",
     proxyRetry: "现在可重试上方的 AI 功能。",
     proxyBad: "请填入以 http:// 或 https:// 开头的有效地址。",
@@ -502,7 +502,7 @@ const T = {
     corrNeeds: "补齐条件",
     corrConf: (c) => `通道 confidence:${c}`,
     empty: "在描述框写一段业务自述(或上传白皮书 / 填官网 URL 导入),选一个或多个法域、选受众,点「映射」。工具会先复述它理解的业务形态、标出监管压力点,再按维度并排列出每个法域的现行要求与该问的问题。",
-    disc: '本工具输出的是研究 / 审查的起点:相关维度、现行条款(直接取自已核验的 register 记录,含出处)、以及该问的问题。它不是法律意见,不判定合规与否,也不替代持牌律师或监管者的判断。维度与分层由代码按固定规则从业务特征推导(同一输入可复现);"理解的业务形态"是工具对你输入的复述,从来源导入时请在描述框核对后再映射。问题部分由模型基于条款与未决张力生成;条款、出处、confidence 均直接来自 register,未经模型改写。覆盖空白处的问题为模板生成,仅指向该维度,不预设任何具体规则。某些记录系自维护者的 Compliance Matrix 转录、尚待最终一手核验。',
+    disc: "这是研究工具。相关条文和来源取自登记册，并保留各记录的审核状态。研究简报供后续核查使用。请在映射前核对导入的业务描述。",
     examples: [
       { label: "支付稳定币 + 路由进货币基金", text: "我们发行一个 1:1 锚定美元的支付稳定币,不向持有人支付利息。用户钱包里的稳定币余额可以被路由进一个已注册的代币化货币市场基金,从而为用户产生收益。我们也面向境外用户提供服务。" },
       { label: "港元锚定 + 跨境零售", text: "我们计划在香港发行一个锚定港元的法币稳定币,面向零售用户,并把用户的 KYC 数据托管在境外的云服务上。我们想做跨境支付结算。" },
@@ -534,17 +534,17 @@ const T = {
     f2: "2 · Target jurisdictions (multi-select)", noCov: "no coverage", dimsU: "dims",
     f3: "3 · Audience",
     audRT: "Regulator", audRS: "Review points + the questions a reviewer asks",
-    audPT: "Project team", audPS: "Current requirements + a checklist for your lawyer",
+    audPT: "Project team", audPS: "Register records and questions to verify",
     qLangL: "Answer language", qAuto: "Follow input", qZh: "中文", qEn: "EN",
     run: "Map →", running: "Working…",
     needDesc: "Write or import a business description (a dozen-plus characters) before mapping.",
     needJur: "Select at least one jurisdiction.",
-    s1: "Step 1: understand the business + route dimensions…", s2: "Step 2: retrieve verified records…",
-    procRoute: "Understand the business + extract features", procRetrieve: (n) => `Retrieve ${n} verified records`, procRetrieveStep: "Derive dimensions by rule + retrieve records", procFrame: "Generate the questions to ask",
+    s1: "Step 1: identify relevant dimensions…", s2: "Step 2: retrieve register records…",
+    procRoute: "Identify business features", procRetrieve: (n) => `Retrieve ${n} register records`, procRetrieveStep: "Derive dimensions by rule and retrieve records", procFrame: "Generate questions to verify",
     framingProg: (d, tot) => `Generating questions… ${d} / ${tot} batches done (provisions & sources are ready below)`,
     errLimit: "AI calls are rate-limited (429): too many runs this session. Wait a minute or two, then click Map again. This is a limit on in-page AI calls that I can't lift: I can only reduce calls and back off.",
     errOverload: "The AI service is temporarily overloaded (529). Wait a moment and click Map again.",
-    errNoProxy: "No model proxy is configured, so the AI features cannot run. This is not your connection: the page is POSTing straight to api.anthropic.com from the browser, which is refused at the CORS preflight and carries no key. Fix: deploy the proxy per README Tier 2, then paste its URL (including the secret path segment) in the field below, or set window.__CBSR_LLM_PROXY__ in index.html and rebuild. The deterministic core (dimension map, corridors, the 12×12 matrix, the timeline, exports) is unaffected.",
+    errNoProxy: "This feature requires a model proxy. Follow DEPLOY.md and enter the endpoint below. The offline dimension map, corridors, matrix and timeline are available.",
     errProxyDown: "A proxy is configured but the request never left the browser. Three usual causes: (1) the URL is wrong or the Worker is not deployed; (2) the Worker's ALLOW_ORIGIN does not permit this site's origin, so the CORS preflight is blocked; (3) the proxy host does not resolve. Open the proxy URL directly in a browser for a health check.",
     errAuth: "The proxy rejected the request (401 / 403): it was reached, but the key is missing or invalid. Check that the Worker has had `wrangler secret put ANTHROPIC_API_KEY` run against it, and that the key is still valid on your Anthropic account.",
     errNotFound: "The proxy returned 404: the server was reached but no route matched. Most often the proxy URL has a trailing slash (the Worker matches the secret path segment exactly); next most often the model string is not served to your account (see AI_MODEL at the top of App.jsx). This build strips trailing slashes automatically, so if 404 persists, verify the secret path segment and the model string.",
@@ -558,18 +558,18 @@ const T = {
     partA: "This business is broader than a stablecoin (it reads like a crypto / digital-capital thesis); only ", partBold: "part", partC: " of it falls within the register. What's mapped below is the part that touches register dimensions; the rest is out of this tool's scope.",
     restateL: "Business form, as understood", restateHint: "Not accurate? Edit the box above and re-map.",
     ppL: "Regulatory pressure points", ppHint: "(click to jump to the section)",
-    resMeta: (c, g, d, aud) => `${c} verified record${c === 1 ? "" : "s"}${g > 0 ? " · " + g + " coverage gap" + (g === 1 ? "" : "s") : ""} · ${d} dimensions · view: ${aud === "regulator" ? "regulator" : "project team"}`,
+    resMeta: (c, g, d, aud) => `${c} register record${c === 1 ? "" : "s"}${g > 0 ? " · " + g + " coverage gap" + (g === 1 ? "" : "s") : ""} · ${d} dimensions · ${aud === "regulator" ? "regulator" : "project team"}`,
     tierP: "Core pressure points: the dimensions this business most distinctively triggers", tierB: "Baseline dimensions: routinely triggered by any business of this type",
     baselineCount: (n, busy) => `${n}${busy ? " · questions generating" : ""} · click to expand`, collapseHint: "click to collapse",
     pTag: "pressure", back: "↑ back to pressure-point list", why: "why relevant",
     qReg: "What a reviewer asks / points to scrutinise", qProj: "Questions to confirm with a licensed lawyer",
-    qGen: "model-generated from this entry · not a conclusion", qGap: "no verified record · points to the dimension only",
+    qGen: "model-generated from this entry · for follow-up", qGap: "no register record · dimension only",
     qGenerating: "generating…", qPendGen: "Questions couldn't be generated: retry. The entry and source above are still valid.",
     frameFailH: (n) => `Question generation failed: ${n} entr${n === 1 ? "y has" : "ies have"} no questions yet`,
-    frameFailKeep: "The verified records, pinpoints, citable flags, and every export are model-free, so everything above remains valid and usable as it stands.",
+    frameFailKeep: "The register records, sources and review status are still shown above. You can still download the research briefing.",
     frameFailRetry: "Retry only the missing questions",
-    noRec: "coverage gap / no verified record",
-    gapBody: (j) => `The register has no verified record for ${j} on this dimension yet. It is relevant to your business and you still need to check it: the tool will not invent a rule.`,
+    noRec: "coverage gap",
+    gapBody: (j) => `The register has no entry for ${j} on this dimension. Check applicable sources for this jurisdiction.`,
     gapQ: (j, dim) => [`What are ${j}'s current requirements on ${dim} for this business?`, `Which authority in ${j} has jurisdiction here, and under what instrument?`, `Are there rules or carve-outs on this dimension specific to this business?`],
     tension: "open tension", channel: "resolution channel: ",
     axClaim: "claim", axLegal: "proposition of law", axOp: "market / operational fact",
@@ -577,27 +577,27 @@ const T = {
     axBind: "binding", bnForce: "in force", bnMade: "passed · not commenced", bnPolicy: "policy final · pending legislation", bnProp: "proposal · pending", bnProhib: "prohibition", bnNone: "no regime",
     citable: "✓ citable as current law", citableWord: "citable", officialSrc: "official source",
     axesLegend: "Each record shows six axes: claim, force, provenance, official source, freshness, and independent review. All six must pass before it is decision-ready.",
-    seamH: "The map stops here.", seamB: "Need a verified corridor analysis for your specific structure across a few jurisdictions / corridors (citable records + corridor feasibility + a checklist to verify)?", seamBtn: "Get a targeted verified analysis →",
+    methodLink: "Read the register methodology →",
     syncOk: "synced live register", syncSnap: "bundled snapshot", syncWait: "syncing…", refreshed: "refreshed",
     asOf: "snapshot as-of", scopeNote: "Scope: this maps the node layer (jurisdiction × dimension): business form → relevant dimensions, governing provisions, and the questions to ask. Corridor feasibility, the time dimension (before/after an instrument takes effect), and cross-jurisdictional analysis live in the full register, not here.",
-    discAsOf: "This is a frozen snapshot; its verification as-of date is shown at the top. Regulation moves (a status can flip within a single day): check currency against the primary source before citing.",
-    scopeNoCov: "The selected jurisdiction(s) have no verified record on the derived dimensions: a coverage gap in the register, not a vague description. Try other jurisdictions, or query the full register.",
+    discAsOf: "The snapshot date appears at the top. Check the cited source and review status before relying on a record.",
+    scopeNoCov: "The register has no matching entries for the selected jurisdictions and dimensions. Try other jurisdictions or query the full register.",
     manualH: "Offline / no-AI fallback: set business features manually",
     manualB: "The routing step needs the model; if it is unavailable, tick the business features below and the tool still produces the dimension map, the matching records, and the citable subset by deterministic rule (this path calls no model). Question generation still needs the model.",
     manualBtn: "Map from these features",
     manualHDemo: "Set business features manually (overrides the automatic reading)",
-    manualBDemo: "The description box is read by a deterministic keyword rule. If it missed or misread a feature, tick it here and map again from these features — the output comes from the same verified records either way.",
+    manualBDemo: "The mapper identifies business features from keywords. Adjust the features here and generate a map from the register records again.",
     refineOpen: "Reading not right? Set the business features by hand ↓",
     refineClose: "Hide manual features ↑",
     qGenDet: "Composed deterministically from this record's own provision / tension fields · not a conclusion",
     aiOffH: "AI-assisted features are off",
-    aiOffB: "Document / URL import, auto-map, and question generation need an authenticated model proxy. In the Anthropic sandbox that proxy is injected automatically; to self-host, deploy the Cloudflare Worker in worker/ per README Tier 2 and paste the resulting https://your-worker.workers.dev/YOUR_PROXY_SECRET below. In the meantime the manual-feature fallback below works, and everything else: the dimension map, corridors, the 12×12 matrix, time-travel, and exports: is deterministic and runs with no model.",
+    aiOffB: "Document or URL import, automatic mapping and question generation require a model proxy. See DEPLOY.md for self-hosting instructions or select the business features manually below.",
     aiOffManual: "Jump to manual mapping",
     aiOffTag: "Deterministic core unaffected",
     proxyLabel: "Or: paste your model-proxy URL to restore AI features",
     proxyPh: "https://your-worker.workers.dev/YOUR_PROXY_SECRET",
     proxyApply: "Apply",
-    proxyHint: "Applies immediately and is remembered in this browser, so a reload does not lose it (clear the field and Apply to forget it). A trailing slash is stripped automatically — the Worker matches the secret path segment exactly, and one extra slash returns 404. To set it for every visitor, edit window.__CBSR_LLM_PROXY__ in index.html and rebuild.",
+    proxyHint: "The endpoint is saved in this browser. Clear the field and select Apply to remove it.",
     proxyOn: "Proxy set to",
     proxyRetry: "you can retry the AI features above now.",
     proxyBad: "Enter a valid URL starting with http:// or https://.",
@@ -618,7 +618,7 @@ const T = {
     corrNeeds: "To verify",
     corrConf: (c) => `corridor confidence: ${c}`,
     empty: "Write a business description (or import from a whitepaper / website URL), pick one or more jurisdictions and an audience, then click Map. The tool first restates the business form it understood and flags the pressure points, then lists each jurisdiction's current requirements and the questions to ask, dimension by dimension.",
-    disc: 'This tool outputs the starting point for research / review: the relevant dimensions, the current provisions (taken directly from verified register records, with sources), and the questions to ask. It is not legal advice, makes no compliance determination, and does not replace a licensed lawyer or a regulator. Dimensions and their tier are derived by fixed rules from business features (reproducible for the same input). "Business form, as understood" is the tool\'s restatement of your input; when importing from a source, review it in the box before mapping. Questions are model-generated from the provisions and open tensions; provisions, sources, and confidence come straight from the register, unedited by the model. Questions on coverage gaps are template-generated, point only to the dimension, and assume no specific rule. Some records are transcribed from the maintainer\'s Compliance Matrix and pending final primary-source verification.',
+    disc: "This is a research tool. Provisions and sources come from the register and retain their review status. Use the briefing as a starting point for further checks. Review imported business descriptions before mapping.",
     examples: [
       { label: "Payment stablecoin + routing into a MMF", text: "We issue a USD-pegged payment stablecoin that pays no interest to holders. A user's stablecoin balance can be routed into a registered tokenised money-market fund to generate yield for the user. We also serve non-US users." },
       { label: "HKD-pegged + cross-border retail", text: "We plan to issue an HKD-pegged fiat-referenced stablecoin to retail users in Hong Kong, hosting user KYC data on overseas cloud services, for cross-border payment settlement." },
@@ -1071,7 +1071,7 @@ const TX = {
     // Nav 的 labels 表因此取到 undefined，undefined[0] 抛错导致整棵 React 树未挂载（白屏）。
     navEval: "合规评估", navMap: "维度地图", navCorr: "走廊", navSub: "约束基底", navFwd: "前瞻", navStruct: "结构", navAgents: "机器接口",
     navEvalSub: "确定性判定 + 回执", navMapSub: "节点层", navCorrSub: "有向可行性 + 时间", navSubSub: "八约束 · 六交互 · C1–C8", navFwdSub: "触发register + 敏感度",
-    navStructSub: "对账 · 结算 · 收敛", navAgentsSub: "MCP · 可引用给机器",
+    navStructSub: "对账 · 结算 · 收敛", navAgentsSub: "MCP · 机读记录",
     // corridor "why" (grounded explanation of the computed class)
     whyH: "为何是这个类别：落到约束基底",
     whyRule: {
@@ -1088,7 +1088,7 @@ const TX = {
     // substrate view
     subH: "约束基底：八约束的可控词表,与它们生成的组合问题",
     subLead: "地图把业务映到维度,走廊把两端组合成可行性。这一层是二者之下的引擎:Architecture 论文归纳出的八个监管约束(C1–C8),每个法域在每个约束上取一个「极」,极由承载 constraint_ref 的记录构成、并标注是否可引用。六个交互集(A–F)是这些约束联合绑定时生成的组合问题：正是它们推导出走廊里的每一个类别。全部为 register 的投影,不新增事实。",
-    subTallyCit: "可引用(tier1 · 现行 · 已核)", subTallyPend: "待核积压(tier1 · 现行 · 未核)", subTallyT1: "法律命题(tier1_legal)", subTallyTot: "记录总数",
+    subTallyCit: "可据以决策", subTallyPend: "现行法律类待核", subTallyT1: "法律命题(tier1_legal)", subTallyTot: "记录总数",
     subConH: "八约束(C1–C8)", subConX: "跨境组合问题:", subConDims: "对应维度:",
     subGridH: "法域 × 约束：极网格", subGridHint: "每格是该法域在该约束上的极。点任一格看其支撑记录。颜色是证据轴:该约束单元是否已达到「可作现行法引用」,还是仍在核验积压里。这就是把核验积压做成可交互面：不是空占位。",
     subStatCit: "可引用极", subStatPend: "现行 · 待核", subStatOther: "记录在册(草案/运营/混合)", subStatNone: "无记录",
@@ -1100,7 +1100,7 @@ const TX = {
     mcpArgJur: "法域", mcpArgO: "起点", mcpArgD: "目的地",
     mcpRunNote: "asserts_new_facts: false：每个工具只筛选和重排已发布记录。这演示了论文的核心主张:「可作现行法引用」是 build 能判定的记录属性,机器一次拿到干净子集。",
     // snapshot / liveness banner
-    snapFrozen: "内置快照", snapLive: "API 已核对", snapChecking: "正在核对 API", snapFallback: "API 未通过 · 已回退",
+    snapFrozen: "内置快照", snapLive: "API 与快照匹配", snapChecking: "正在核对 API", snapFallback: "API 未通过 · 已回退",
     snapAgeNew: (d) => `截至 ${d}`,
     snapAge: (as_of, d) => `快照截至 ${as_of} · 已 ${d} 天`,
     snapDisc: "这是一个带日期、可版本化的登记册的一次快照：不是活体订阅。监管可在同一日内翻转（本 register 的台湾条目即在快照当日三读通过）。引用前请对照一手来源核实时效。",
@@ -1164,8 +1164,8 @@ const TX = {
     structConvAnchor: "锚定实例(可引用深度)", structConvSibling: "同族限制", structConvCounter: "反例",
     structConvDisc: "纪律:仅在 tier1_legal + in_force + resolution_text 且功能线两侧都有记录处,才以可引用深度断言收敛：今天只有美国。其余在册于「禁止」一侧,两侧线作为 backlog,不断言其画同一条线。这正是 register 自身的 citable-purity 纪律,是它让收敛成为 finding 而非印象。",
     // agents view
-    agH: "为机器而可引用：register 的 agent 接口",
-    agLead: "比较监管的机读知识库,越来越多不是被会权衡 caveat 的人读,而是被软件读:检索管线、语言模型 agent、自动合规工具,它们会把某字段所断言的当作事实。方法论论文的核心主张是:一个字段是不是「可作现行法引用」,应当是 build 能判定的记录属性,而非人在每次读取时重新做的判断。同一套 register 因此暴露一个 typed 的 MCP 工具面,让 agent 消费：每个工具只筛选和重排已发布记录,不生成事实。",
+    agH: "登记册的 MCP 接口",
+    agLead: "软件可以通过带类型定义的 MCP 工具查询登记册。工具读取已发布记录，并保留来源、法律状态、数据日期和版本等字段。可据以决策的记录须通过六项审核条件。",
     agToolSurface: (n) => `MCP 工具面 · ${n} 个 typed 工具`,
     agGuard: "护栏(每次调用都成立)",
     agSampleH: "示例调用 → 返回形状",
@@ -1177,9 +1177,9 @@ const TX = {
     agConsume: "谁在消费这一层",
     // export
     expBtn: "导出简报（Markdown）", expBtnCorr: "导出走廊分析（Markdown）", expBtnFwd: "导出前瞻读数（Markdown）",
-    expReady: "简报已生成并下载。把它交给持牌律师作为交接物。",
+    expReady: "研究简报已下载。",
     expNote: "导出为 Markdown:条款 + 出处 + 该问的问题 + 走廊 + 前瞻读数：一份可交给律师的清单。不含任何合规结论。",
-    // session / seam
+    // session / research export
     sessH: "本次会话覆盖的层",
     sessNode: (n) => `节点层:${n} 个维度`, sessCorr: (n) => `走廊层:${n} 对通道`,
     sessFwd: (n) => `前瞻层:${n} 个法域读数`, sessStruct: "结构层:对账/结算/收敛",
@@ -1206,7 +1206,7 @@ const TX = {
     // CSV / citation export
     expCsvCorr: "导出走廊矩阵（CSV）", expCsvCite: "导出可引用记录（CSV）", expBib: "导出引用（BibTeX）",
     expCsvCorrNote: "132 条有向边 · 起点/目的地/类别/含义/翻转日：表格工具即用。",
-    expCsvCiteNote: (n) => `${n} 条可引用记录 · 每条带官方出处 URL + pinpoint：律所/四大交接物。`,
+    expCsvCiteNote: (n) => `${n} 条可据以决策的记录`,
     expBibNote: "本 register 的 BibTeX 条目(含 DOI),供论文/备忘录引用。",
     expCff: "导出引用文件（CITATION.cff）",
     expCffNote: "标准 Citation File Format 文件(含 DOI + ORCID)：GitHub 与 Zenodo 可直接识别。",
@@ -1222,7 +1222,7 @@ const TX = {
     // [v0.11.2 fix] navEval / navEvalSub added: see the zh block above.
     navEval: "Evaluate", navMap: "Dimension map", navCorr: "Corridors", navSub: "Substrate", navFwd: "Forward", navStruct: "Structure", navAgents: "Machine surface",
     navEvalSub: "deterministic decision + receipt", navMapSub: "node layer", navCorrSub: "directed feasibility + time", navSubSub: "8 constraints · 6 interactions · C1–C8", navFwdSub: "trigger register + sensitivity",
-    navStructSub: "reconciliation · settlement · convergence", navAgentsSub: "MCP · citable for machines",
+    navStructSub: "reconciliation · settlement · convergence", navAgentsSub: "MCP · machine-readable records",
     // corridor "why" (grounded explanation of the computed class)
     whyH: "Why this class: grounded in the substrate",
     whyRule: {
@@ -1239,7 +1239,7 @@ const TX = {
     // substrate view
     subH: "Constraint substrate: the eight-constraint vocabulary and the composition problems it generates",
     subLead: "The map projects a business onto dimensions; corridors compose two ends into feasibility. This layer is the engine beneath both: the eight regulatory constraints (C1–C8) induced in the Architecture paper. Each jurisdiction takes a pole on each constraint, built from the records that carry a constraint_ref and flagged for citability. The six interaction sets (A–F) are the composition problems joint binding generates: and they are what produce every class in the corridor view. All of it is a projection of the register; it asserts no new facts.",
-    subTallyCit: "citable (tier1 · in force · verified)", subTallyPend: "verification backlog (tier1 · in force · unverified)", subTallyT1: "legal propositions (tier1_legal)", subTallyTot: "records total",
+    subTallyCit: "decision-ready", subTallyPend: "in-force legal records pending checks", subTallyT1: "legal propositions (tier1_legal)", subTallyTot: "records total",
     subConH: "The eight constraints (C1–C8)", subConX: "Cross-border composition problem:", subConDims: "Register dimensions:",
     subGridH: "Jurisdiction × constraint: the pole grid", subGridHint: "Each cell is the jurisdiction's pole on that constraint. Tap a cell for its justifying record(s). Colour is the evidence axis: whether that constraint cell has reached 'citable as current law', or is still in the verification backlog. This is the backlog made interactive: not an empty placeholder.",
     subStatCit: "citable pole", subStatPend: "in force · pending verification", subStatOther: "on record (draft / operational / mixed)", subStatNone: "no record",
@@ -1250,7 +1250,7 @@ const TX = {
     mcpRunLead: "The tool surface is not just a catalogue. Pick a tool and it runs against the register embedded above, returning the real shape: no network, no synthesis; the output is exactly the projection the deployed server's tool would return.",
     mcpArgJur: "jurisdiction", mcpArgO: "origin", mcpArgD: "destination",
     mcpRunNote: "asserts_new_facts: false: each tool only filters and reshapes published records. This demonstrates the paper's central claim: 'citable as current law' is a record property the build can decide, so a machine gets the clean subset in one call.",
-    snapFrozen: "Bundled snapshot", snapLive: "API-verified", snapChecking: "Checking API", snapFallback: "API rejected · fallback",
+    snapFrozen: "Bundled snapshot", snapLive: "API matched snapshot", snapChecking: "Checking API", snapFallback: "API rejected · fallback",
     snapAgeNew: (d) => `as of ${d}`,
     snapAge: (as_of, d) => `snapshot as of ${as_of} · ${d} days old`,
     snapDisc: "This is one snapshot of a dated, versionable register: not a live subscription. Regulation can flip intraday (this register's Taiwan entry passed at third reading on the snapshot date itself). Verify against the primary source before relying on it.",
@@ -1309,8 +1309,8 @@ const TX = {
     structConvLead: "Read across jurisdictions rather than edge by edge, the register surfaces a second macro finding: independent legislative systems are converging on the same functional boundary around stablecoin yield: yield for merely holding is prohibited, activity-linked rewards are permitted. The line is decided by the same functional test (conversion-direction, ownership-disclosure, timing-independence, yield-attribution, audit-trail) across jurisdictions.",
     structConvAnchor: "Anchor (citable depth)", structConvSibling: "Sibling restriction", structConvCounter: "Counter-example",
     structConvDisc: "Discipline: convergence is asserted at citable depth only where the cell is tier1_legal + in_force + resolution_text AND both sides of the line are documented: today, the United States alone. The rest are recorded on the prohibited side, with the two-sided line carried as backlog, not asserted as drawing the same line. This is the register's own citable-purity discipline: what keeps the convergence a finding, not an impression.",
-    agH: "Citable for machines: the register's agent surface",
-    agLead: "Machine-readable knowledge bases of comparative regulation are increasingly read not by a human who can weigh a caveat but by software: retrieval pipelines, language-model agents, automated compliance tools, that treat whatever a field asserts as fact. The methodology paper's core claim is that whether a record may be cited as current binding law should be a build-decidable property, not a judgment a human re-makes on every read. The same register therefore exposes a typed MCP surface for agents to consume: each tool only filters and reshapes published records; no facts are generated.",
+    agH: "The register's MCP interface",
+    agLead: "Software can query the register through typed MCP tools. The tools read published records and retain fields for sources, legal status, snapshot date and version. Records marked decision-ready must pass all six evidence checks.",
     agToolSurface: (n) => `MCP surface · ${n} typed tools`,
     agGuard: "Guardrails (hold on every call)",
     agSampleH: "Sample call → response shape",
@@ -1321,7 +1321,7 @@ const TX = {
     agLayerCorridor: "corridor + composition", agLayerTime: "time engine", agLayerComputed: "computed reconciliation", agLayerStakeholder: "stakeholder projection", agLayerAgentic: "evidence search + decision audit",
     agConsume: "who consumes this layer",
     expBtn: "Export briefing (Markdown)", expBtnCorr: "Export corridor analysis (Markdown)", expBtnFwd: "Export forward reading (Markdown)",
-    expReady: "Briefing generated and downloaded. Hand it to a licensed lawyer as the handoff.",
+    expReady: "Research briefing downloaded.",
     expNote: "Exports as Markdown: provisions + sources + questions to ask + corridors + forward readings: a checklist you can hand to a lawyer. It contains no compliance conclusion.",
     sessH: "Layers this session covered",
     sessNode: (n) => `Node layer: ${n} dimensions`, sessCorr: (n) => `Corridor layer: ${n} pairs`,
@@ -1349,7 +1349,7 @@ const TX = {
     // CSV / citation export
     expCsvCorr: "Export corridor matrix (CSV)", expCsvCite: "Export citable records (CSV)", expBib: "Export citation (BibTeX)",
     expCsvCorrNote: "132 directed edges · origin/destination/class/meaning/flip-date: ready for a spreadsheet.",
-    expCsvCiteNote: (n) => `${n} citable records · each with its official source URL + pinpoint: a law-firm / Big-Four handoff.`,
+    expCsvCiteNote: (n) => `${n} decision-ready record${n === 1 ? "" : "s"}`,
     expBibNote: "A BibTeX entry for this register (with DOI), for citing in a paper or memo.",
     expCff: "Export citation file (CITATION.cff)",
     expCffNote: "A standard Citation File Format file (with DOI + ORCID): recognised by GitHub and Zenodo.",
@@ -1548,7 +1548,7 @@ function buildCorridorCsv(ui, asOf) {
   }
   return rows.join("\n");
 }
-// The 46 citable records with their official source + pinpoint — the lawyer-citable subset.
+// Only records that pass the decision-ready gate enter this export.
 function buildCitableCsv() {
   const head = ["record_id", "jurisdiction", "dimension", "constraint_ref", "authority", "instrument_label_local", "requirement_summary", "source_primary", "pinpoint", "source_url", "claim_class", "evidence_tier", "binding_status"];
   const rows = [head.map(csvCell).join(",")];
@@ -1573,7 +1573,7 @@ function buildBibtex() {
     "  publisher    = {Zenodo},",
     "  doi          = {10.5281/zenodo.20730358},",
     "  url          = {https://doi.org/10.5281/zenodo.20730358},",
-    "  note         = {As-of " + (m.as_of || "") + "; " + m.record_count + " records, " + m.citable_count + " citable. Machine-readable register of cross-border stablecoin regulation across a fifteen-dimension framework.},",
+    "  note         = {Snapshot " + (m.as_of || "") + ", " + m.record_count + " records, " + m.structural_candidate_count + " structural candidates, " + m.decision_ready_count + " decision-ready.},",
     "  howpublished = {Machine-readable register, schema-validated, queryable over MCP}",
     "}",
   ].join("\n");
@@ -1601,7 +1601,7 @@ function buildCitationCff() {
     "    orcid: \"https://orcid.org/0009-0005-6762-084X\"",
     "repository-code: \"https://github.com/yunjiefanresearch-hub/cross-border-stablecoin-register\"",
     "url: \"https://doi.org/10.5281/zenodo.20730358\"",
-    "abstract: \"An open, versioned, machine-readable register of how jurisdictions regulate stablecoins across a fifteen-dimension framework derived from an eight-constraint model, with two doctrinal spines (the permitted-activity / yield boundary and securities classification) and a corridor-level interoperability layer. This citation is for the register snapshot embedded in the dimension-mapper frontend: " + m.record_count + " records, " + m.citable_count + " lawyer-citable, as-of " + (m.as_of || "") + ". Data is licensed CC-BY-4.0.\"",
+    "abstract: \"An open, versioned register of how twelve jurisdictions regulate stablecoins. The mapper displays the dated register snapshot, with separate fields for source and review status. Snapshot " + (m.as_of || "") + ", " + m.record_count + " records, " + m.structural_candidate_count + " structural candidates, " + m.decision_ready_count + " decision-ready. Data is licensed CC-BY-4.0.\"",
     "keywords:",
     "  - stablecoin",
     "  - tokenized real-world assets",
@@ -1623,8 +1623,7 @@ function buildCitationCff() {
 }
 
 // ── Self-contained PDF export (no external libraries) ──────────────────────────
-// Produces a genuine, one-click .pdf summary of the 46 citable records with the
-// register's DOI in the header — closing the round-1 "PDF export" item literally.
+// Summarizes decision-ready records with the register's DOI in the header.
 // Uses PDF's built-in Helvetica (a standard-14 font, no embedding needed), lays
 // text out with manual word-wrap + pagination, and assembles a valid xref table
 // with byte-accurate offsets. ASCII-only output so it's safe as a text Blob.
@@ -1659,8 +1658,8 @@ function buildCitablePdf() {
   // Header block.
   emit(pdfAscii(m.name), 15, 20, 0);
   emit("Citable-records summary  ·  version " + m.version + "  ·  as of " + m.as_of, 9, 14, 4);
-  emit("DOI: 10.5281/zenodo.20730358   ·   " + recs.length + " citable records (tier-1 legal, resolution-text, in force)", 9, 14, 0);
-  emit("Each record below is citable by construction; see CITATION.cff / .bib for machine-readable citation.", 8, 12, 2);
+  emit("DOI: 10.5281/zenodo.20730358   ·   " + recs.length + " decision-ready records", 9, 14, 0);
+  emit("This export lists records that pass all six evidence checks. See the CITATION.cff or BibTeX export for citation details.", 8, 12, 2);
   // One compact block per citable record.
   const jn = DATA.jurisdictions;
   recs.forEach((r, i) => {
@@ -2501,7 +2500,7 @@ function SnapshotBanner({ t, ui, sync }) {
 }
 
 // ── Session-coverage summary — honest record of which register layers the user
-// has actually touched; feeds the export and gives the seam something concrete.
+// has actually touched and supplies context for the export.
 function SessionSummary({ t, session }) {
   const items = [];
   if (session.nodeDims) items.push(t.sessNode(session.nodeDims));
@@ -3516,11 +3515,7 @@ export default function App() {
             <div className="export-note">{exported ? t.expReady : t.expNote}</div>
           </div>
 
-          <div className="seam">
-            <div className="seam-h">{t.seamH}</div>
-            <div className="seam-b">{t.seamB}</div>
-            {CONTACT && <a className="seam-btn" href={CONTACT} target="_blank" rel="noopener noreferrer">{t.seamBtn}</a>}
-          </div>
+          <a className="method-link" href={METHODOLOGY_URL} target="_blank" rel="noopener noreferrer">{t.methodLink}</a>
         </section>
       )}
 
@@ -3717,7 +3712,7 @@ const CSS = `@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono
 .corridor-src-v .src-pend{color:var(--gap); font-style:italic;}
 @media (max-width:520px){ .head-title{font-size:25px;} .aud-btn{min-width:100%;} .leg-k{flex-basis:64px;} }
 
-/* ---- evidence axes / citable badge / official link / seam / sync (v0.10.1 update) ---- */
+/* ---- evidence axes / citable badge / official link / sync ---- */
 .axes{ display:flex; flex-wrap:wrap; gap:6px 14px; margin:6px 0 2px; }
 .axis{ display:inline-flex; align-items:baseline; gap:5px; font-size:11px; line-height:1.5; }
 .axis-k{ color:var(--slate); text-transform:uppercase; letter-spacing:.04em; font-size:9.5px; }
@@ -3734,13 +3729,7 @@ const CSS = `@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono
 .sync{ font-weight:600; }
 .sync-ok{ color:var(--verify); }
 .sync-off,.sync-wait{ color:var(--slate); }
-.seam{ margin-top:18px; padding:15px 16px; border:1px solid var(--rule); border-left:3px solid var(--verify);
-  border-radius:8px; background:var(--paper2); }
-.seam-h{ font-weight:700; font-size:14px; color:var(--ink); margin-bottom:4px; }
-.seam-b{ font-size:12.5px; line-height:1.6; color:var(--slate); }
-.seam-btn{ display:inline-block; margin-top:11px; padding:8px 15px; font-size:13px; font-weight:600;
-  color:#FBFBF9; background:var(--verify); border-radius:7px; text-decoration:none; }
-.seam-btn:hover{ background:#24406A; }
+.method-link{ display:inline-block; margin-top:14px; color:var(--verify); font-size:13px; font-weight:600; }
 
 /* ---- scope note / as-of / manual no-AI fallback (v2 review pass) ---- */
 .scope-note{ font-size:11.5px; line-height:1.55; color:var(--slate); margin-top:9px; padding-top:9px; border-top:1px dashed var(--rule); }
