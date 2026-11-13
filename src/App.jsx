@@ -1558,11 +1558,16 @@ function buildCitableCsv() {
   }
   return rows.join("\n");
 }
-// BibTeX — the format most readers actually paste into a .bib. It previously carried neither a DOI
-// nor a URL, so a citation generated from it could not be resolved back to the work. Both are now
-// present, anchored to the DOI (stable across repo renames) rather than to a domain.
+// Archive DOIs identify a single register release. Add an entry when bundling a new release.
+const REGISTER_ARCHIVES = {
+  "0.11.0": { doi: "10.5281/zenodo.22021736", releaseDate: "2026-08-20" },
+};
+const REGISTER_REPOSITORY = "https://github.com/yunjiefanresearch-hub/cross-border-stablecoin-register";
+
 function buildBibtex() {
   const m = DATA.meta;
+  const doi = REGISTER_ARCHIVES[m.version]?.doi;
+  const url = doi ? "https://doi.org/" + doi : REGISTER_REPOSITORY;
   const year = (m.as_of || "2026").slice(0, 4);
   return [
     "@dataset{cbsr_register_v" + (m.version || "").replace(/\./g, "_") + ",",
@@ -1570,26 +1575,18 @@ function buildBibtex() {
     "  author       = {Fan, Yunjie},",
     "  version      = {" + m.version + "},",
     "  year         = {" + year + "},",
-    "  publisher    = {Zenodo},",
-    "  doi          = {10.5281/zenodo.20730358},",
-    "  url          = {https://doi.org/10.5281/zenodo.20730358},",
+    ...(doi ? ["  publisher    = {Zenodo},", "  doi          = {" + doi + "},"] : []),
+    "  url          = {" + url + "},",
     "  note         = {Snapshot " + (m.as_of || "") + ", " + m.record_count + " records, " + m.structural_candidate_count + " structural candidates, " + m.decision_ready_count + " decision-ready.},",
     "  howpublished = {Machine-readable register, schema-validated, queryable over MCP}",
     "}",
   ].join("\n");
 }
-// CITATION.cff — the Citation File Format the register repo publishes at its root, regenerated
-// from the embedded snapshot so version / date / counts always match what the tool is showing.
-//
-// The repo was renamed from `stablecoin-rail-register` to `cross-border-stablecoin-register`. The
-// legacy Pages URL (yunjiefanresearch-hub.github.io/stablecoin-rail-register) now returns 404, and
-// the legacy GitHub URL survives only on GitHub's rename-redirect. Both were baked in here, so every
-// citation file a reader exported carried a dead link. `url` is therefore anchored to the DOI, which
-// is the project's own stated citable anchor ("the citable anchor is the DOI, not a domain") and is
-// stable across any future rename. The schema `$id` keeps the legacy slug on purpose: a JSON Schema
-// $id is an identifier, not a locator, and changing it would break anyone who pinned it.
+// Generate the Citation File Format export from the version and counts shown in the mapper.
 function buildCitationCff() {
   const m = DATA.meta;
+  const doi = REGISTER_ARCHIVES[m.version]?.doi;
+  const url = doi ? "https://doi.org/" + doi : REGISTER_REPOSITORY;
   return [
     "cff-version: 1.2.0",
     "title: \"" + m.name + "\"",
@@ -1599,8 +1596,8 @@ function buildCitationCff() {
     "  - family-names: \"Fan\"",
     "    given-names: \"Yunjie\"",
     "    orcid: \"https://orcid.org/0009-0005-6762-084X\"",
-    "repository-code: \"https://github.com/yunjiefanresearch-hub/cross-border-stablecoin-register\"",
-    "url: \"https://doi.org/10.5281/zenodo.20730358\"",
+    "repository-code: \"" + REGISTER_REPOSITORY + "\"",
+    "url: \"" + url + "\"",
     "abstract: \"An open, versioned register of how twelve jurisdictions regulate stablecoins. The mapper displays the dated register snapshot, with separate fields for source and review status. Snapshot " + (m.as_of || "") + ", " + m.record_count + " records, " + m.structural_candidate_count + " structural candidates, " + m.decision_ready_count + " decision-ready. Data is licensed CC-BY-4.0.\"",
     "keywords:",
     "  - stablecoin",
@@ -1612,8 +1609,7 @@ function buildCitationCff() {
     "  - GENIUS Act",
     "license: CC-BY-4.0",
     "version: \"" + m.version + "\"",
-    "date-released: \"2026-07-09\"",
-    "doi: \"10.5281/zenodo.20730358\"",
+    ...(doi ? ["date-released: \"" + REGISTER_ARCHIVES[m.version].releaseDate + "\"", "doi: \"" + doi + "\""] : []),
     "identifiers:",
     "  - type: other",
     "    value: \"SSRN author 11463068\"",
@@ -1642,6 +1638,7 @@ function pdfWrap(s, max) {
 }
 function buildCitablePdf() {
   const m = DATA.meta;
+  const doi = REGISTER_ARCHIVES[m.version]?.doi;
   const recs = DATA.records.filter((r) => r.citable);
   // Page geometry (US Letter), margins, and a text cursor.
   const PW = 612, PH = 792, ML = 54, MT = 748, MB = 54, MAXW = 92;
@@ -1658,7 +1655,8 @@ function buildCitablePdf() {
   // Header block.
   emit(pdfAscii(m.name), 15, 20, 0);
   emit("Citable-records summary  ·  version " + m.version + "  ·  as of " + m.as_of, 9, 14, 4);
-  emit("DOI: 10.5281/zenodo.20730358   ·   " + recs.length + " decision-ready records", 9, 14, 0);
+  emit(recs.length + " decision-ready records", 9, 14, 0);
+  if (doi) emit("DOI: " + doi, 9, 14, 0);
   emit("This export lists records that pass all six evidence checks. See the CITATION.cff or BibTeX export for citation details.", 8, 12, 2);
   // One compact block per citable record.
   const jn = DATA.jurisdictions;
